@@ -1,0 +1,20 @@
+{
+  "name": "hyperboost-engine-pro",
+  "version": "1.0.0",
+  "description": "Rootless Android performance engine, telemetry analyzer, and floating HUD overlay powered by Shizuku and accessibility services.",
+  "type": "module",
+  "scripts": {
+    "dev": "npx http-server -p 3000",
+    "build": "echo 'Static site - no build needed'"
+  },
+  "keywords": [
+    "android",
+    "gaming",
+    "performance"
+  ],
+  "author": "",
+  "license": "SEE LICENSE IN LICENSE",
+  "dependencies": {
+    "@vercel/analytics": "^1.1.1"
+  }
+}

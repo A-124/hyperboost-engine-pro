@@ -23,3 +23,8 @@ debug.keystore
 *.p12
 keystore.properties
 /dist
+
+# Extra signing and env files
+keystore.b64
+.env.*
+!.env.example

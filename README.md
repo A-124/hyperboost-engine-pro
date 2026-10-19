@@ -1,69 +1,53 @@
 # HyperBoost Engine Pro
 
-**Rootless Android performance engine** for gamers: one-tap boost, live telemetry, a floating FPS HUD, a screen-center crosshair and per-game profiles. It works **without root** through [Shizuku](https://shizuku.rikka.app/) (wireless ADB) plus an accessibility service.
-
-![Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white)
-![Root](https://img.shields.io/badge/Root-not%20required-00BCD4)
-
----
+Rootless Android performance engine: one-tap boost, live telemetry, floating FPS HUD / crosshair
+and per-game profiles. Works **without root** through [Shizuku](https://shizuku.rikka.app/)
+(wireless ADB) plus an accessibility service.
 
 ## Features
 
 | Area | What it does |
 |------|--------------|
-| **Master Turbo** | Applies every safe tweak independently; one unsupported tweak never aborts the rest |
-| **Display** | Refresh-rate lock, 720p downscale + DPI |
-| **GPU** | Skia-Vulkan pipeline (`skiavk`), SurfaceFlinger instant latching |
-| **Input** | Fast pointer, touch prediction, quick long-press, zero animations |
-| **Network** | Wi-Fi low-latency mode, no Wi-Fi sleep, Private DNS ("Gaming DNS") |
+| Master Turbo | Applies every safe tweak independently; one unsupported tweak never aborts the rest |
+| Display | Refresh-rate lock, 720p downscale + DPI |
+| GPU | Skia-Vulkan pipeline (`skiavk`), SurfaceFlinger instant latching |
+| Input | Fast pointer, touch prediction, quick long-press, zero animations |
+| Network | Wi-Fi low-latency mode, no Wi-Fi sleep, Private DNS |
 | **Power / thermal** | Sustained-performance mode, Battery Saver + Adaptive Battery off |
 | **Background** | Phantom-process shield (Android 12+), clear cached apps, game Do-Not-Disturb |
 | **Storage** | On-demand TRIM + background dexopt |
-| **Per-game profiles** | Auto-boost refresh rate, AOT speed-profile pre-compile, Game Mode, Doze whitelist, one-tap Launch |
-| **Floating Telemetry HUD** | Draggable live FPS, frametime curve, temperature and memory usage |
-| **Crosshair overlay** | Screen-center crosshair with custom reticle color, size and thickness |
-| **Safety** | Snapshots your original values and restores them exactly with **Restore My Original Settings** |
+| Per game | AOT speed-profile compile, Game Mode, Doze whitelist |
+| **Live telemetry** | Real FPS / frametime / 1% low / jank of the app in front (SurfaceFlinger present times, gfxinfo fallback), CPU load, CPU/GPU/battery temps, real power draw. Never simulated: unmeasurable values show `--` with the reason |
+| **Safety** | Snapshots your original values and restores them exactly ("Restore My Original Settings") |
 
-> Tweaks that rely on hidden OEM/AOSP flags are best-effort and behave differently per device and Android version. Unsupported ones are skipped and reported.
+## How the numbers are measured
 
-## Requirements
+* **FPS / frametime / jank** - Shizuku runs `dumpsys SurfaceFlinger --latency <layer>` for the layer of the
+  foreground app (SurfaceView layers first, which is where games draw) and reads the real *present* timestamps.
+  Apps that draw through HWUI fall back to `dumpsys gfxinfo <pkg> framestats` completion times.
+  Jank is relative to the app's own cadence, so a locked 30 FPS game on a 120 Hz panel is 0% jank.
+* **1% low** - 99th-percentile frame interval over the last ~10 s.
+* **CPU / GPU temp, CPU load** - `/sys/class/thermal` and `/proc/stat` through Shizuku.
+* **Power** - `BATTERY_PROPERTY_CURRENT_NOW` x voltage, smoothed, with unit auto-detection (uA vs mA).
+* FPS is measured for the app in front, so it shows `--` on the HyperBoost screen itself; use the floating HUD in-game.
 
-- Android 8.0+
-- [Shizuku](https://shizuku.rikka.app/) installed and running
-- Developer options → **Wireless debugging** enabled (Android 11+)
-- Permissions you will be asked for: **Display over other apps** (HUD and crosshair), **Notifications**, and **Accessibility** (Macro Service)
+## Setup on the phone
 
-## Install
+1. Install the APK from the Releases page.
+2. Install **Shizuku**, start it with *Wireless debugging* (Developer options), and grant HyperBoost access.
+3. Open HyperBoost → tap **Master Turbo**.
 
-1. Download the latest APK from the [Releases](../../releases) page.
-2. Install it (allow "Install unknown apps" for your browser or file manager if asked).
-3. Install **Shizuku** and start it using *Wireless debugging*.
-4. Open HyperBoost, grant Shizuku access, then tap **Master Turbo**.
+> Tweaks that rely on hidden OEM/AOSP flags are best-effort and behave differently per device and
+> Android version. Unsupported ones are skipped and reported.
 
-The in-app **Setup Guide** walks you through the Shizuku step.
+## Build locally
 
-## Using the app
+```bash
+./gradlew assembleDebug      # app/build/outputs/apk/debug
+./gradlew assembleRelease    # signed with debug key unless release secrets are set
+```
+Requires JDK 17+ and the Android SDK (Android Studio sets both up).
 
-- **Master Turbo**: applies all tweaks at once.
-- **Restore My Original Settings**: undoes every tweak back to the exact values you had before.
-- **Game profiles**: switch a game on for Auto-Boost, use **Pre-compile AOT** to speed up game loading, then tap **Launch**.
-- **Floating Telemetry HUD** and **Screen Center Crosshair**: grant **Overlay Perms** first, then turn the switch on. The crosshair has a customizer for color, size and thickness.
-- **Macro Service**: enable it in Android's accessibility settings. The status dot shows whether it is active.
+## Release an APK (GitHub Actions)
 
-## Troubleshooting
-
-| Problem | Fix |
-|---------|-----|
-| Tweaks do nothing | Make sure Shizuku is running (restart it with Wireless debugging after every reboot) and that HyperBoost has access |
-| HUD or crosshair doesn't appear | Grant **Overlay Perms** in the app |
-| Macro Service shows a red dot | Enable HyperBoost under Settings → Accessibility |
-| Something feels off after boosting | Tap **Restore My Original Settings** |
-| "No video available" on the rewarded ad | Ad availability varies; try again later |
-
-## Ads
-
-The free version shows ads: a banner, an occasional interstitial, and an optional rewarded video that turns ads off for **1 hour**.
-
-## Disclaimer
-
-HyperBoost changes system settings through Shizuku. Results vary by device, and some tweaks may be unsupported on your ROM. Use **Restore My Original Settings** to revert. Provided as is, without warranty.
+See [RELEASING.md](RELEASING.md).

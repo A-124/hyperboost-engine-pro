@@ -18,6 +18,12 @@ jobs:
       STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
       KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      # Unity Ads (optional repo *Variables*; defaults live in app/build.gradle.kts)
+      UNITY_GAME_ID: ${{ vars.UNITY_GAME_ID }}
+      UNITY_TEST_MODE: ${{ vars.UNITY_TEST_MODE }}
+      UNITY_BANNER_ID: ${{ vars.UNITY_BANNER_ID }}
+      UNITY_INTERSTITIAL_ID: ${{ vars.UNITY_INTERSTITIAL_ID }}
+      UNITY_REWARDED_ID: ${{ vars.UNITY_REWARDED_ID }}
 
     steps:
       - uses: actions/checkout@v4

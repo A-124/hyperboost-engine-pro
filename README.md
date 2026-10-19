@@ -1,5 +1,7 @@
 # HyperBoost Engine Pro
 
+> **Proprietary software — All Rights Reserved.** This repository is public for viewing only. No open-source license is granted. Reuse, modification, redistribution, or commercial use of the original project requires prior written permission from A-124. Third-party components retain their own licenses.
+
 Rootless Android performance engine: one-tap boost, live telemetry, floating FPS HUD / crosshair
 and per-game profiles. Works **without root** through [Shizuku](https://shizuku.rikka.app/)
 (wireless ADB) plus an accessibility service.
@@ -40,13 +42,9 @@ and per-game profiles. Works **without root** through [Shizuku](https://shizuku.
 > Tweaks that rely on hidden OEM/AOSP flags are best-effort and behave differently per device and
 > Android version. Unsupported ones are skipped and reported.
 
-## Build locally
+## Local build information
 
-```bash
-./gradlew assembleDebug      # app/build/outputs/apk/debug
-./gradlew assembleRelease    # signed with debug key unless release secrets are set
-```
-Requires JDK 17+ and the Android SDK (Android Studio sets both up).
+Build instructions are not provided as a grant of permission to reuse or redistribute the source. The project is proprietary and all rights are reserved. Any use beyond viewing the public repository requires prior written permission from A-124.
 
 ## Release an APK (GitHub Actions)
 

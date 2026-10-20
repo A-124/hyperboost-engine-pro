@@ -1,5 +1,7 @@
 <div align="center">
 
+![HyperBoost Engine Pro — HyperBoost Your Gaming Experience](assets/hyperboost-banner.svg)
+
 # ⚡ HyperBoost Engine Pro
 
 ### Android Gaming Toolkit • Shizuku • Rootless Performance Controls

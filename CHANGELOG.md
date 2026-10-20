@@ -4,6 +4,14 @@
 
 _No unreleased changes yet._
 
+## 1.3.6 - 2026-10-20
+
+### In-app updates
+- Automatically checks for a newer public release when the app starts.
+- Adds a manual update check from the dashboard.
+- Reads the minimum supported version policy and prompts users to update when required.
+- Downloads the APK, verifies its SHA-256 digest when provided by GitHub Releases, and opens Android's package installer for user confirmation.
+
 ## 1.3.5 - 2026-10-20
 
 ### Ads

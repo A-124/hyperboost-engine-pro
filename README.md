@@ -86,9 +86,9 @@ Official Shizuku documentation: https://shizuku.rikka.app/
 
 It is designed as a rootless utility. Certain features require Shizuku and the relevant Android permissions; compatibility varies by device.
 
-### Will it increase FPS in every game?
+### Can HyperBoost Engine Pro help improve gaming performance?
 
-No. Performance depends on the game, device hardware, thermal limits, Android software, and the specific settings available. Results are not guaranteed.
+HyperBoost Engine Pro brings supported performance controls and gaming tools together to help you tune your Android setup for your games. Depending on your device and the options available, adjustments may help reduce unnecessary background activity or improve your gaming setup. For the best results, use the tools supported by your phone, monitor temperatures, and compare performance before and after applying changes.
 
 ### Where can I get the newest version?
 

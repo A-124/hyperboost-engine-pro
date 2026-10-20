@@ -19,6 +19,12 @@ A rootless Android gaming companion with supported performance tools, a live FPS
 
 ---
 
+## Visual showcase
+
+![HyperBoost Engine Pro feature showcase](assets/feature-showcase.svg)
+
+<sub>Illustrative repository artwork, not captured screenshots of the current app UI. Replace this showcase with real screenshots as they become available.</sub>
+
 ## What is HyperBoost Engine Pro?
 
 **HyperBoost Engine Pro** is an Android gaming utility for players who want quick access to supported system tweaks and gaming tools without rooting their phone. It uses **Shizuku** for features that require elevated ADB-level access, alongside Android permissions and APIs where available.

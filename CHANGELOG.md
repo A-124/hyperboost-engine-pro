@@ -4,6 +4,12 @@
 
 _No unreleased changes yet._
 
+## 1.3.7 - 2026-10-20
+
+### Private APK build check
+- Bumps the local fallback app version to 1.3.7 so the version is consistent for local testing.
+- No feature changes; this patch is intended to verify the private release workflow can run tests, build the APK, and attach the APK and SHA-256 checksum.
+
 ## 1.3.6 - 2026-10-20
 
 ### In-app updates

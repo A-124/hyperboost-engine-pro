@@ -19,11 +19,14 @@ A rootless Android gaming companion with supported performance tools, a live FPS
 
 ---
 
-## Visual showcase
+## App screenshots
 
-![HyperBoost Engine Pro feature showcase](assets/feature-showcase.svg)
-
-<sub>Illustrative repository artwork, not captured screenshots of the current app UI. Replace this showcase with real screenshots as they become available.</sub>
+<p align="center">
+  <img src="assets/Screenshot_2026-10-20-17-55-41-80_3700502abb509cb95ee88dc5de0a357f.jpg" alt="HyperBoost Engine Pro app screenshot 1" width="24%">
+  <img src="assets/Screenshot_2026-10-20-17-55-45-05_3700502abb509cb95ee88dc5de0a357f.jpg" alt="HyperBoost Engine Pro app screenshot 2" width="24%">
+  <img src="assets/Screenshot_2026-10-20-17-56-26-79_3700502abb509cb95ee88dc5de0a357f.jpg" alt="HyperBoost Engine Pro app screenshot 3" width="24%">
+  <img src="assets/Screenshot_2026-10-20-17-56-40-57_3700502abb509cb95ee88dc5de0a357f.jpg" alt="HyperBoost Engine Pro app screenshot 4" width="24%">
+</p>
 
 ## What is HyperBoost Engine Pro?
 

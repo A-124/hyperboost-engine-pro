@@ -2,113 +2,120 @@
 
 # ⚡ HyperBoost Engine Pro
 
-**A Rootless Android Gaming Performance & System Optimization Utility**
+### Android Gaming Toolkit • Shizuku • Rootless Performance Controls
+
+A rootless Android gaming companion with supported performance tools, a live FPS HUD, crosshair overlay, and per-game profiles.
 
 [![Latest Release](https://img.shields.io/github/v/release/A-124/hyperboost-engine-pro?style=for-the-badge&color=7c3aed)](https://github.com/A-124/hyperboost-engine-pro/releases/latest)
-[![Android Version](https://img.shields.io/badge/Android-8.0%2B-3ddc84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/)
-[![Shizuku Framework](https://img.shields.io/badge/Requires-Shizuku-007ACC?style=for-the-badge&logo=android&logoColor=white)](https://shizuku.rikka.app/)
+[![Android](https://img.shields.io/badge/Android-8.0%2B-3ddc84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/)
+[![Shizuku](https://img.shields.io/badge/Works_with-Shizuku-007ACC?style=for-the-badge&logo=android&logoColor=white)](https://shizuku.rikka.app/)
 [![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)](https://hyperboost-engine-pro.vercel.app)
 
-[🌐 Official Website](https://hyperboost-engine-pro.vercel.app) • [⬇️ Download Latest APK](https://github.com/A-124/hyperboost-engine-pro/releases/latest) • [🛠️ Shizuku Setup Guide](https://shizuku.rikka.app/)
-
----
+[🌐 Official Website](https://hyperboost-engine-pro.vercel.app) · [⬇️ Latest APK](https://github.com/A-124/hyperboost-engine-pro/releases/latest) · [📋 All Releases](https://github.com/A-124/hyperboost-engine-pro/releases) · [🐛 Report a Bug](https://github.com/A-124/hyperboost-engine-pro/issues)
 
 </div>
 
-## 📌 Overview
-
-**HyperBoost Engine Pro** is a lightweight, rootless Android performance utility designed for gamers and power users. By leveraging **Shizuku** to execute elevated ADB-level commands alongside target accessibility integrations, HyperBoost allows you to fine-tune system scheduling, display parameters, and game behavior **without rooting your device**.
-
-> ⚠️ **Notice:** Feature availability and performance gains vary depending on device OEM (ColorOS, MIUI, One UI, OxygenOS, stock Android), SoC capabilities, Android version, and system permissions.
-
 ---
 
-## 📑 Table of Contents
-- [✨ Key Features](#-key-features)
-- [📊 Telemetry & Metric Measurement](#-telemetry--metric-measurement)
-- [🚀 Getting Started](#-getting-started)
-- [📋 System Requirements](#-system-requirements)
-- [🛡️ Safety & Restoration](#️-safety--restoration)
-- [📥 Downloads & Releases](#-downloads--releases)
-- [🔒 License & Ownership](#-license--ownership)
+## What is HyperBoost Engine Pro?
 
----
+**HyperBoost Engine Pro** is an Android gaming utility for players who want quick access to supported system tweaks and gaming tools without rooting their phone. It uses **Shizuku** for features that require elevated ADB-level access, alongside Android permissions and APIs where available.
 
-## ✨ Key Features
+The project brings supported controls, overlays, performance information, and per-game preferences into one place. Actual features and results depend on your Android version, phone manufacturer, hardware, permissions, and Shizuku status.
 
-| Feature | Description |
-| :--- | :--- |
-| 🚀 **Master Turbo** | Executes multi-layered optimizations independently — ensuring unavailable tweaks do not block supported routines. |
-| 🖥️ **Display Tuning** | On-the-fly refresh rate forcing, resolution scaling overrides, and density (DPI) adjustments where supported. |
-| 🎯 **Input Optimization** | Adjust pointer speed, touch latency parameters, long-press delay, and window animation scales. |
-| 🌐 **Network Optimization** | Low-latency Wi-Fi toggles and automated Private DNS switching support. |
-| 🌡️ **Thermal & Power Controls** | Tweak supported background battery restrictions, power profiles, and thermal throttling behaviors. |
-| 🧹 **Process Management** | Smart background app management, cached process cleaning, and game distraction locks. |
-| 💾 **Storage Maintenance** | Execute manual filesystem TRIM operations and speed up app loading using system `dexopt` compilation. |
-| 🎮 **Per-Game Profiles** | Custom game space configurations, Doze mode overrides, and per-app performance rules. |
-| 📊 **Live Performance Overlay** | In-game floating HUD featuring real-time FPS, frame timing, 1% lows, jank spikes, CPU load, and battery power draw. |
-| ↩️ **1-Click Settings Restore** | Automatically backs up modified system flags and provides a seamless restore function. |
+> **Important:** No app can guarantee higher FPS or eliminate lag on every device. Some Android manufacturers restrict system interfaces, and some features may be unavailable on certain phones. Review each action before applying it.
 
----
+## At a glance
 
-## 📊 Telemetry & Metric Measurement
+- **Rootless Android utility:** Designed to work without unlocking or modifying the system partition.
+- **Shizuku integration:** Some functions require Shizuku to be running and authorized.
+- **Gaming overlays:** Includes supported live performance HUD and crosshair overlay features.
+- **Per-game setup:** Organize supported settings and preferences for individual games.
+- **Reversible changes:** Use the app's restore feature for settings it has backed up and modified.
 
-Unlike standard apps that show mock or simulated performance stats, HyperBoost Engine Pro pulls telemetry directly from native Android diagnostic APIs via Shizuku:
+## Features
 
-* **FPS & Frame Times:** Direct SurfaceFlinger presentation timestamp parsing, with `gfxinfo` diagnostics as fallback.
-* **1% Low FPS:** Estimated dynamically over a scrolling frame-interval sampling window.
-* **CPU Load & Thermal Zones:** Extracted from active system kernel hardware sensors.
-* **Power Draw:** Calculated using system battery current ($I$) and voltage ($V$) interfaces where exposed by the OEM.
+| Feature | What it does |
+| --- | --- |
+| 🚀 **Master Turbo** | Runs supported optimization actions from one place. Individual actions may be skipped if the device does not support them. |
+| 📊 **Live FPS HUD** | Displays available frame-rate and performance information while gaming. |
+| 🎯 **Crosshair Overlay** | Provides a configurable overlay on compatible devices and games. |
+| 🎮 **Per-Game Profiles** | Organizes supported preferences and settings for individual games. |
+| 🖥️ **Display Controls** | Offers supported refresh-rate, resolution-scaling, or display-density options where available. |
+| 👆 **Input Controls** | Provides supported pointer, touch, or animation-related settings. |
+| 🌐 **Network Options** | Includes supported network-related shortcuts or settings; results depend on Android and network configuration. |
+| 🌡️ **Power & Background Tools** | Exposes supported power or background-management options where available. |
+| 💾 **Storage Maintenance** | Provides supported maintenance actions on compatible Android builds. |
+| ↩️ **Restore Settings** | Helps restore backed-up values for supported settings changed by the app. |
 
-*Note: If a device manufacturer restricts access to a specific thermal or hardware path, HyperBoost displays `--` instead of guessing metrics.*
+### About performance metrics
 
----
+The app may show available FPS, frame timing, CPU, thermal, or battery-related information depending on the device and the access Android permits. Some readings may be unavailable on certain manufacturers' software. If a value is unavailable, do not assume it is zero or that the phone has a fault.
 
-## 🚀 Getting Started
+## Requirements
 
-1. **Download the APK:** Get the latest release from the official [Releases Page](https://github.com/A-124/hyperboost-engine-pro/releases/latest).
-2. **Setup Shizuku:** Install and start **[Shizuku](https://shizuku.rikka.app/)** using Wireless Debugging or PC ADB.
-3. **Grant Permissions:** Launch HyperBoost Engine Pro and authorize Shizuku and required system access.
-4. **Apply Optimizations:** Run **Master Turbo** or customize per-game configurations in the dashboard.
-5. **Revert Changes:** Use **Restore My Original Settings** at any time to revert modified parameters.
+- **Android:** Android 8.0 or later, subject to feature-specific compatibility.
+- **Shizuku:** Install and start Shizuku, then authorize HyperBoost for features that require it.
+- **Permissions:** Grant only the permissions needed for the features you choose to use.
+- **Device compatibility:** Feature availability varies by manufacturer, Android release, and hardware.
 
----
+Official Shizuku documentation: https://shizuku.rikka.app/
 
-## 📋 System Requirements
+## Install and get started
 
-* **Android OS:** Android 8.0 (Oreo) or higher.
-* **Shizuku Framework:** Active and authorized service.
-* **Developer Options:** Enabled (for Wireless Debugging setup).
-* **Hardware:** Compatible with Qualcomm Snapdragon, MediaTek Dimensity, Samsung Exynos, and Google Tensor SoCs.
+1. Open the [latest official GitHub release](https://github.com/A-124/hyperboost-engine-pro/releases/latest).
+2. Download the APK attached to that release.
+3. Install the APK. Android may ask you to allow installation from the browser or file manager you used.
+4. If a feature requires Shizuku, follow the official [Shizuku setup instructions](https://shizuku.rikka.app/), start the service, and authorize HyperBoost.
+5. Open HyperBoost Engine Pro and review the available tools. Start with one change at a time.
+6. If you change a supported setting and want to revert it, use the app's restore feature where available.
 
----
+**Download safety:** Use the official release page linked above. Check the release notes and version before installing. Do not install APKs from unofficial mirrors.
 
-## 🛡️ Safety & Restoration
+## Troubleshooting
 
-* **Non-Destructive:** HyperBoost modifies soft Android software parameters via official APIs and ADB flags — it does not modify system partitions.
-* **Reversible:** Built-in backup tables allow you to safely restore original values for modified settings.
-* **Safe Operations:** Always apply tweaks gradually and test for temperature, battery usage, and overall game stability.
+- **Shizuku is not connected:** Make sure Shizuku is running and HyperBoost has been authorized.
+- **A feature is missing or unavailable:** Your Android version, manufacturer, permissions, or hardware may not support that action.
+- **A metric shows as unavailable:** Some devices restrict access to system diagnostics. This does not necessarily indicate a problem with your phone.
+- **A setting behaves unexpectedly:** Stop using the affected option and restore the backed-up value if the app provides that option.
+- **Need help?** [Open an issue](https://github.com/A-124/hyperboost-engine-pro/issues) and include your app version, Android version, device model, and steps to reproduce. Never post passwords, private tokens, or other secrets.
 
----
+## FAQ
 
-## 📥 Downloads & Releases
+### Does HyperBoost Engine Pro require root?
 
-Always download official releases directly from verified sources:
+It is designed as a rootless utility. Certain features require Shizuku and the relevant Android permissions; compatibility varies by device.
 
-* 📦 **[Latest Production APK](https://github.com/A-124/hyperboost-engine-pro/releases/latest)**
-* 🌐 **[Official Web Portal](https://hyperboost-engine-pro.vercel.app)**
-* 📜 **[Version Changelogs](https://github.com/A-124/hyperboost-engine-pro/releases)**
+### Will it increase FPS in every game?
 
----
+No. Performance depends on the game, device hardware, thermal limits, Android software, and the specific settings available. Results are not guaranteed.
 
-## 🔒 License & Ownership
+### Where can I get the newest version?
 
-**HyperBoost Engine Pro** is **proprietary software** developed and maintained by **A-124**. 
+Use the [latest release page](https://github.com/A-124/hyperboost-engine-pro/releases/latest). The website also links to the official GitHub project.
 
-All rights reserved. Access to this public repository is provided strictly for project documentation, bug reporting, and official download links. Redistribution, reverse engineering, unauthorized mirroring, or commercial use without explicit permission is prohibited.
+### Why do some options or readings differ between phones?
+
+Android manufacturers expose and restrict different system features. A feature or metric available on one device may not be available on another.
+
+## Official links
+
+- **Website:** https://hyperboost-engine-pro.vercel.app
+- **Latest APK:** https://github.com/A-124/hyperboost-engine-pro/releases/latest
+- **Release history:** https://github.com/A-124/hyperboost-engine-pro/releases
+- **Issues and bug reports:** https://github.com/A-124/hyperboost-engine-pro/issues
+- **Shizuku documentation:** https://shizuku.rikka.app/
+
+## License
+
+HyperBoost Engine Pro is proprietary software developed and maintained by **A-124**. All rights are reserved. Refer to the repository's [LICENSE](https://github.com/A-124/hyperboost-engine-pro/blob/main/LICENSE) file for the applicable terms. Do not redistribute or commercially reuse the software unless the license or the maintainer explicitly permits it.
 
 ---
 
 <div align="center">
-  <sub>Developed by <strong>A-124</strong> • Built for Android Gaming Performance</sub>
+
+**HyperBoost Engine Pro** · Android gaming tools without root
+
+Maintained by [A-124](https://github.com/A-124)
+
 </div>

@@ -4,6 +4,20 @@
 
 _No unreleased changes yet._
 
+## 1.3.8 - 2026-10-21
+
+### In-app updates & installer improvements
+- **Package conflict fix**: Added pre-install signature verification (`checkSignatureCompatibility`) to detect signing certificate mismatches before invoking Android's package installer, avoiding the cryptic "App not installed as package conflicts with an existing package" error.
+- **Guided update export**: When a signature mismatch is detected (e.g. updating between a local/debug build and a release build), the APK is automatically exported to the public `Downloads` directory and guides the user through a clean reinstall without lost downloads.
+- **Zero-OOM checksum streaming**: Computes SHA-256 on the fly during network download using 8 KB buffers, completely eliminating out-of-memory errors on large APK files.
+- **Live download progress**: Displays download percentage, downloaded MB, and total MB directly in an update dialog.
+- **SHA-256 fallback**: Automatically parses `SHA256SUMS.txt` if GitHub release asset metadata lacks the `digest` field.
+- **Rate-limit protection**: Throttles cold-start background update checks to a 6-hour interval in `SharedPreferences` to protect against GitHub API HTTP 403 limits.
+- **Resumable permissions**: Automatically resumes download when returning from the system "Install unknown apps" settings screen.
+- **Cache cleanup**: Automatically cleans up older cached update APKs before downloading a new release.
+- **Deterministic debug keystore**: Added a committed repository `debug.keystore` so local and CI fallback builds share identical signatures.
+- **Unit tests**: Added `UpdateManagerTest` verifying version comparisons and compatibility status models.
+
 ## 1.3.7 - 2026-10-20
 
 ### Private APK build check

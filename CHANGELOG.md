@@ -1,8 +1,63 @@
 # Changelog
 
-## Unreleased
+## 1.5.0 - 2026-10-22
 
-_No unreleased changes yet._
+### Deep system customization
+- Keep More Apps Cached: raises the cached-app limit from 32 to 64 (Android 12+), verified by read-back and undone by Restore.
+- Stay Awake While Charging, Screen Timeout presets (1 / 5 / 15 min), Landscape Lock and Quiet Radios (background Bluetooth scans and always-on cellular off).
+- Touch Overlay: touch dots and live X/Y coordinates for picking Auto Tap positions.
+
+### Visual tweaks
+- Force Dark Theme (Android 10+; your original day/night mode is remembered and restored), Night Light, Grayscale Display.
+- Extra Dim presets (25 / 50 / 75%, Android 12+) and Font Size presets (0.85x / 1.15x / 1.3x).
+
+### Stability and automation
+- Stability Guard: caps the refresh rate to 60 Hz when CPU/GPU/battery temperature is high or battery is under 15%, then restores the previous rate. Clears background apps during a game when free RAM drops below 10% (2-minute cooldown).
+- Game Session Automation: per-session Do Not Disturb, RAM clean, Stay Awake and Landscape Lock for games with Optimize on; only what the session switched on is undone when you leave the game.
+- Copy Device Report: device, display, RAM, temperature and active-tweak summary for bug reports.
+
+### Notes
+- All new tweaks snapshot the original value, verify the write where possible, and are covered by Restore.
+- Support varies by Android version and ROM; unsupported tweaks report why instead of failing silently.
+
+## 1.4.3 - 2026-10-21
+
+### In-app updates
+- Install downloaded updates through Android's PackageInstaller session API so the app receives the install result.
+- Show a clear in-app error with Android's installer details when an update is cancelled or rejected.
+
+## 1.4.2 - 2026-10-21
+
+### Ads
+- Failed banner requests stay completely hidden, with no error strip or dialog; automatic retries continue with capped backoff.
+
+### Rootless tools
+- Added a Shizuku network ping check that measures average latency to Cloudflare.
+- Added a per-app background restriction switch for user apps; HyperBoost remembers each app's previous standby policy and restores it when switched off or when using Restore.
+
+### Release
+- Correct release signing fingerprint extraction and normalize its formatting before comparison.
+
+## 1.4.0 - 2026-10-21
+
+### Ads and updates
+- Corrected the Unity Ads Game ID to HyperBoost's registered Android app ID (`800403406`); the previous ID belonged to another app in the Unity account.
+- Added a compact banner-ad unavailable message with a one-tap retry, so a no-fill or placement error is visible instead of looking like a broken blank area.
+- Banner ads now retry indefinitely with a capped backoff, and successful loads reset the retry delay.
+- Update checks now show the GitHub API's error message, including rate-limit details, instead of only a generic HTTP status.
+- Kept SHA-256 verification, signature checks, and the guided reinstall flow for incompatible update signatures.
+
+### Release notes
+- The in-app updater reads releases from the public `A-124/hyperboost-engine-pro` repository; the APK must be published there as well as in this private source repository.
+- The previous release was debug-signed. Android may require uninstalling v1.3.9 before installing v1.4.0; consistent in-place updates need a persistent release keystore configured in GitHub Actions.
+
+## 1.3.9 - 2026-10-21
+
+### In-app feedback
+- Added an in-app feedback form with Idea, Bug, and Other categories.
+- Sends feedback to a write-only Firestore collection after anonymous Firebase sign-in; includes app and Android versions and device model.
+- Added Firestore security rules and Firebase setup instructions.
+- Connected the Android app to the HyperBoost Firebase project.
 
 ## 1.3.8 - 2026-10-21
 

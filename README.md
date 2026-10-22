@@ -65,11 +65,14 @@ HyperBoost gives you tools to tune and monitor your setup. Actual performance ch
 - **Macro automation:** Accessibility-based automation tools for supported workflows.
 - **Permission-guided setup:** The app provides entry points to configure Shizuku, overlay, and accessibility access as needed.
 
-### ↩️ Restore and safety features
+### ↩️ Restore, updates, and support
 - **Restore original settings:** The app snapshots original values for supported settings before changing them, then uses those snapshots when restoring.
 - **Read-back checks:** Selected operations are checked against the device's reported state where possible.
 - **Thermal-aware safeguards:** Some options include guards intended to reduce unsafe or unsuitable use.
 - **Status and error feedback:** Unsupported or rejected operations may be reported rather than silently treated as successful.
+- **Update flow:** Includes update-checking and a guided APK update/install flow when a compatible release is available.
+- **In-app feedback:** Send feedback through the app's feedback form; delivery depends on the configured Firebase services and network connection.
+- **Ad controls:** The app includes ad-related UI and an option to temporarily hide ads through the in-app rewarded flow, where available.
 
 > **Compatibility note:** Android and device manufacturers restrict different system interfaces. Some readings or controls may be unavailable, and successful application of a setting does not guarantee a specific FPS result. Avoid forcing sustained performance at the expense of device temperature or stability.
 

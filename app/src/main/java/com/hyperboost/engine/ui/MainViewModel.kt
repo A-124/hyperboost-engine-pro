@@ -38,16 +38,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
         private const val TAG = "MainViewModel"
-        const val TOTAL_BOOSTERS = 12
+        const val TOTAL_BOOSTERS = 11
         private const val MASTER_STEPS = 8
 
         /** Thermal guard limits. The override is turned off as soon as either one is reached. */
         const val THERMAL_CPU_LIMIT_C = 60f
         const val THERMAL_GPU_LIMIT_C = 65f
         const val THERMAL_CHECK_MS = 4_000L
-
-        /** How long a display-size change waits for confirmation before it reverts to native. */
-        const val RESOLUTION_REVERT_SECONDS = 6
 
         /** Choices for the level cards (index 0 = off / user's own value). */
         val FONT_STEPS: List<Float?> = listOf(null, 0.85f, 1.15f, 1.3f)
@@ -81,9 +78,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val targetRefreshRate: Int = 120,
         val forceVulkan: Boolean = true,
         val isOptimized: Boolean = false,
-        val isCompiled: Boolean = false,
-        /** Per-game render scale (0.2-1.0); null = native. */
-        val displayScale: Float? = null
+        val isCompiled: Boolean = false
     )
 
     /** Every value is a real measurement; null means "not measurable right now" (never faked). */
@@ -142,9 +137,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _isSurfaceFlingerUncapped = MutableStateFlow(false)
     val isSurfaceFlingerUncapped: StateFlow<Boolean> = _isSurfaceFlingerUncapped.asStateFlow()
 
-    private val _isDownscaled720p = MutableStateFlow(false)
-    val isDownscaled720p: StateFlow<Boolean> = _isDownscaled720p.asStateFlow()
-
     private val _isSustainedPerfActive = MutableStateFlow(false)
     val isSustainedPerfActive: StateFlow<Boolean> = _isSustainedPerfActive.asStateFlow()
 
@@ -176,21 +168,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _isShowRefreshRateActive = MutableStateFlow(false)
     val isShowRefreshRateActive: StateFlow<Boolean> = _isShowRefreshRateActive.asStateFlow()
 
-    /** Current wm size override, or null for native. */
-    private val _displayOverrideWidth = MutableStateFlow<Int?>(null)
-    val displayOverrideWidth: StateFlow<Int?> = _displayOverrideWidth.asStateFlow()
-
-    /** Seconds left to confirm a display-size change, or null when nothing is waiting for confirmation. */
-    private val _pendingRevertSeconds = MutableStateFlow<Int?>(null)
-    val pendingRevertSeconds: StateFlow<Int?> = _pendingRevertSeconds.asStateFlow()
-
     private val _userApps = MutableStateFlow<List<UserApp>>(emptyList())
     val userApps: StateFlow<List<UserApp>> = _userApps.asStateFlow()
 
     val isAutoTapRunning: StateFlow<Boolean> = AutoTapService.isRunning
 
     private var thermalGuardJob: Job? = null
-    private var resolutionRevertJob: Job? = null
 
     /** Cleanup that must still run after this ViewModel has been cleared. */
     private val cleanupScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -230,7 +213,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _isWifiGamingActive,
             _isVulkanActive,
             _isSurfaceFlingerUncapped,
-            _isDownscaled720p,
             _isSustainedPerfActive,
             _isGameDndActive,
             _isPhantomProtectionActive,
@@ -245,8 +227,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     /** Package whose profile is currently applied (so a profile is applied once per session, not per event). */
     private var activeProfilePackage: String? = null
     private var profileLockedRefresh = false
-    private var gameDisplayPackage: String? = null
-    private var gameDisplayBackup: PerformanceEngine.DisplayConfig? = null
 
     private val knownGamePrefixes = listOf(
         "com.tencent.ig", "com.pubg", "com.activision.callofduty", "com.garena.game", "com.miHoYo",
@@ -297,37 +277,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         telemetryHub.release("ui")
         thermalGuardJob?.cancel()
         thermalGuardJob = null
-        resolutionRevertJob?.cancel()
         // The temperature guard dies with this screen, so the thermal override must not outlive it.
         if (_isThermalOverrideActive.value) {
             cleanupScope.launch { performanceEngine.setThermalOverride(false) }
-        }
-        // A display size that was never confirmed goes back to native.
-        if (_pendingRevertSeconds.value != null) {
-            cleanupScope.launch {
-                performanceEngine.resetDisplayResolution()
-                performanceEngine.resetDisplayDensity()
-            }
-        }
-        // Restore the pre-game display if the app is closed while a per-game profile is active.
-        val displayPackage = gameDisplayPackage
-        val displayBackup = gameDisplayBackup
-        gameDisplayPackage = null
-        gameDisplayBackup = null
-        if (displayPackage != null) {
-            cleanupScope.launch {
-                val width = displayBackup?.overrideWidth
-                val height = displayBackup?.overrideHeight
-                if (width != null && height != null) {
-                    performanceEngine.setDisplayResolution(width, height)
-                    val density = displayBackup?.overrideDensity
-                    if (density != null) performanceEngine.setDisplayDensity(density)
-                    else performanceEngine.resetDisplayDensity()
-                } else {
-                    performanceEngine.resetDisplayResolution()
-                    performanceEngine.resetDisplayDensity()
-                }
-            }
         }
         stabilityJob?.cancel()
         telemetryHub.release("guard")
@@ -339,8 +291,35 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun syncStateWhenAuthorized() {
         viewModelScope.launch {
             shizukuStatus.collect { status ->
-                if (status == ShizukuManager.ShizukuStatus.AUTHORIZED) syncStateFromDevice()
+                if (status == ShizukuManager.ShizukuStatus.AUTHORIZED) {
+                    syncStateFromDevice()
+                    cleanupLegacyDisplayOverride()
+                }
             }
+        }
+    }
+
+    /**
+     * The render-scale feature was removed. If an earlier build left a wm size/density override,
+     * recover it once Shizuku is authorized, and drop the old per-game scale preferences.
+     */
+    private fun cleanupLegacyDisplayOverride() {
+        if (gamePrefs.getBoolean("display/legacy_cleanup_done", false)) return
+        val legacyKeys = gamePrefs.all.keys.filter { it.startsWith("scale/") || it.startsWith("res/") }
+        viewModelScope.launch {
+            val config = performanceEngine.getDisplayConfig().getOrNull()
+            val overridden = config != null &&
+                (config.overrideWidth != null || config.overrideDensity != null)
+            if (overridden && legacyKeys.isNotEmpty()) {
+                performanceEngine.resetDisplayResolution()
+                performanceEngine.resetDisplayDensity()
+                _userFeedbackMessage.emit("Removed a display override left by the earlier render-scale build.")
+            }
+            if (legacyKeys.isNotEmpty()) {
+                gamePrefs.edit().apply { legacyKeys.forEach { remove(it) } }.apply()
+            }
+            gamePrefs.edit().putBoolean("display/legacy_cleanup_done", true).apply()
+            refreshDisplayConfig()
         }
     }
 
@@ -368,7 +347,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _isWifiGamingActive.value = s.wifiGaming
         _isVulkanActive.value = s.vulkan
         _isSurfaceFlingerUncapped.value = s.surfaceFlingerLatch
-        _isDownscaled720p.value = s.downscaled
         _isSustainedPerfActive.value = s.sustainedPerformance
         _isGameDndActive.value = s.gameDnd
         _isPhantomProtectionActive.value = s.phantomProtection
@@ -432,18 +410,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private suspend fun onForegroundChanged(pkg: String) {
         if (pkg == context.packageName) return
         val game = _installedGames.value.find { it.packageName == pkg }
-        val hasDisplayScale = (game?.displayScale ?: 1f) < 0.999f
-        if (game != null && (game.isOptimized || hasDisplayScale)) {
+        if (game != null && game.isOptimized) {
             if (activeProfilePackage == pkg) return
             activeProfilePackage = pkg
-            if (game.isOptimized) {
-                _userFeedbackMessage.emit("Game detected: ${game.appName} — applying its profile")
-                applyGameProfile(game)
-                startGameSession()
-            } else {
-                _userFeedbackMessage.emit("Game detected: ${game.appName} — applying its render scale")
-                applyGameDisplayProfile(game)
-            }
+            _userFeedbackMessage.emit("Game detected: ${game.appName} — applying its profile")
+            applyGameProfile(game)
+            startGameSession()
         } else if (activeProfilePackage != null) {
             // Left the game: give the refresh rate back to the user's own setting (unless Master Turbo owns it).
             val left = activeProfilePackage
@@ -537,15 +509,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private suspend fun restoreEverything() {
         sessionApplied.clear()
-        gameDisplayPackage = null
-        gameDisplayBackup = null
-        _displayOverrideWidth.value = null
         guardRestoreHz = null
         // Stop the guard first so it can't race the restore, then undo everything the engine changed.
         thermalGuardJob?.cancel()
         thermalGuardJob = null
-        resolutionRevertJob?.cancel()
-        _pendingRevertSeconds.value = null
         if (AutoTapService.isRunning.value) stopAutoTap()
         val problems = performanceEngine.restoreAllDefaults()
 
@@ -558,7 +525,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _isTouchBoostActive.value = false
             _isWifiGamingActive.value = false
             _isSurfaceFlingerUncapped.value = false
-            _isDownscaled720p.value = false
             _isSustainedPerfActive.value = false
             _isGameDndActive.value = false
             _isPhantomProtectionActive.value = false
@@ -726,55 +692,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val hz = reading.hz
         if (hz == null) Result.failure<String>(RuntimeException(prefix + reading.note))
         else Result.success(prefix + "Gyro runs at about ${hz.roundToInt()} Hz. " + reading.note)
-    }
-
-    /** Starts the countdown that reverts an unconfirmed display-size change to native. */
-    private fun startResolutionRevertCountdown() {
-        resolutionRevertJob?.cancel()
-        resolutionRevertJob = viewModelScope.launch {
-            for (second in RESOLUTION_REVERT_SECONDS downTo 1) {
-                _pendingRevertSeconds.value = second
-                delay(1_000L)
-            }
-            _pendingRevertSeconds.value = null
-            resolutionRevertJob = null
-            revertDisplayToNative("No confirmation, so the display went back to its native size.")
-        }
-    }
-
-    /** The user confirmed the new display size. */
-    fun keepResolution() {
-        resolutionRevertJob?.cancel()
-        resolutionRevertJob = null
-        _pendingRevertSeconds.value = null
-        emitMessage("Display size kept.")
-    }
-
-    /** The user chose to revert the display size right away. */
-    fun revertResolutionNow() {
-        resolutionRevertJob?.cancel()
-        resolutionRevertJob = null
-        _pendingRevertSeconds.value = null
-        revertDisplayToNative("Reverted to your native display size.")
-    }
-
-    private fun revertDisplayToNative(message: String) {
-        viewModelScope.launch {
-            _isBusy.value = true
-            try {
-                performanceEngine.resetDisplayResolution().getOrThrow()
-                performanceEngine.resetDisplayDensity().getOrThrow()
-                _isDownscaled720p.value = false
-                _displayOverrideWidth.value = null
-                _userFeedbackMessage.emit(message)
-            } catch (e: Exception) {
-                _userFeedbackMessage.emit("Display reset error: ${e.message}")
-                syncStateFromDevice()
-            } finally {
-                _isBusy.value = false
-                refreshDisplayConfig()
-            }
-        }
     }
 
     /** Loads the user-installed apps and which of them are frozen. System and protected apps are never listed. */
@@ -1077,37 +994,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun setGameDisplayScale(packageName: String, scale: Float) {
-        val clean = scale.coerceIn(0.2f, 1.0f)
-        val stored = clean.takeIf { it < 0.999f }
-        _installedGames.update { list ->
-            list.map { if (it.packageName == packageName) it.copy(displayScale = stored) else it }
-        }
-        if (stored == null) gamePrefs.edit().remove("scale/$packageName").apply()
-        else gamePrefs.edit().putFloat("scale/$packageName", stored).apply()
-        emitMessage(
-            if (stored == null) "This game will use native resolution."
-            else "Saved ${stored}x render scale for this game."
-        )
-    }
-
-    private fun applyGameDisplayProfile(game: GameProfile) {
-        val scale = game.displayScale ?: return
-        viewModelScope.launch {
-            applyGameDisplay(scale, game.packageName).onFailure {
-                _userFeedbackMessage.emit("${game.appName}: render scale could not be applied — ${it.message}")
-            }
-        }
-    }
-
     private fun applyGameProfile(game: GameProfile) {
         viewModelScope.launch {
             val results = mutableListOf<String>()
-            if (gameDisplayPackage != null && gameDisplayPackage != game.packageName) restoreGameDisplay()
-            if (game.displayScale != null && game.displayScale < 0.999f) {
-                applyGameDisplay(game.displayScale, game.packageName)
-                    .onFailure { results += "display: ${it.message}" }
-            }
             // Clamp to what the panel really supports instead of requesting a rate it doesn't have.
             val hz = _supportedRefreshRates.value
                 .filter { it <= game.targetRefreshRate }.maxOrNull() ?: maxRefreshRate
@@ -1130,63 +1019,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private suspend fun applyGameDisplay(scale: Float, packageName: String): Result<Unit> {
-        if (gameDisplayPackage == packageName) return Result.success(Unit)
-        if (gameDisplayPackage != null) restoreGameDisplay()
-        if (scale >= 0.999f) return Result.success(Unit)
-        return try {
-            val config = performanceEngine.getDisplayConfig().getOrNull()
-                ?: throw IllegalStateException("Could not read the display configuration.")
-            if (config.physicalWidth <= 0) throw IllegalStateException("The device did not report its panel width.")
-            gameDisplayBackup = config
-            gameDisplayPackage = packageName
-            val targetW = (config.physicalWidth * scale).roundToInt().coerceAtLeast(160)
-            val targetH = (config.physicalHeight * scale).roundToInt().coerceAtLeast(160)
-            val targetDpi = (config.physicalDensity * scale).roundToInt().coerceIn(80, 800)
-            performanceEngine.setDisplayResolution(targetW, targetH).getOrThrow()
-            performanceEngine.setDisplayDensity(targetDpi).getOrThrow()
-            _displayOverrideWidth.value = targetW
-            _isDownscaled720p.value = true
-            _userFeedbackMessage.emit(
-                "Game render scale ${scale}x (${targetW}p) applied; the previous display returns when you leave."
-            )
-            Result.success(Unit)
-        } catch (e: Exception) {
-            gameDisplayBackup = null
-            gameDisplayPackage = null
-            Result.failure(e)
-        }
-    }
-
-    private suspend fun restoreGameDisplay() {
-        val packageName = gameDisplayPackage ?: return
-        val backup = gameDisplayBackup
-        gameDisplayPackage = null
-        gameDisplayBackup = null
-        try {
-            val width = backup?.overrideWidth
-            val height = backup?.overrideHeight
-            if (width != null && height != null) {
-                performanceEngine.setDisplayResolution(width, height)
-                val density = backup?.overrideDensity
-                if (density != null) performanceEngine.setDisplayDensity(density)
-                else performanceEngine.resetDisplayDensity()
-                _displayOverrideWidth.value = width
-                _isDownscaled720p.value = true
-            } else {
-                performanceEngine.resetDisplayResolution()
-                performanceEngine.resetDisplayDensity()
-                _displayOverrideWidth.value = null
-                _isDownscaled720p.value = false
-            }
-            refreshDisplayConfig()
-            _userFeedbackMessage.emit("Display restored after leaving $packageName.")
-        } catch (e: Exception) {
-            _userFeedbackMessage.emit("Could not restore display after leaving $packageName: ${e.message}")
-            syncStateFromDevice()
-        }
-    }
-
     fun refreshDisplayConfig() {
         viewModelScope.launch {
             val config = performanceEngine.getDisplayConfig().getOrNull()
@@ -1196,8 +1028,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 } else {
                     "${config.physicalWidth}x${config.physicalHeight} (Native)"
                 }
-                _displayOverrideWidth.value = config.overrideWidth
-                _isDownscaled720p.value = config.overrideWidth != null
                 _telemetryState.update { it.copy(displayResolution = resString) }
             }
         }
@@ -1227,8 +1057,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         forceVulkan = true,
                         // Remembered per game; new games default to auto-boost on.
                         isOptimized = gamePrefs.getBoolean("opt/${app.packageName}", true),
-                        isCompiled = gamePrefs.getBoolean("compiled/${app.packageName}", false),
-                        displayScale = gamePrefs.getFloat("scale/${app.packageName}", 1.0f).takeIf { it < 0.999f }
+                        isCompiled = gamePrefs.getBoolean("compiled/${app.packageName}", false)
                     )
                 }
                 .sortedBy { it.appName.lowercase() }
@@ -1433,7 +1262,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     .onSuccess { _advancedActive.update { it - "landscape" } }
             }
         }
-        restoreGameDisplay()
         sessionApplied.clear()
     }
 }

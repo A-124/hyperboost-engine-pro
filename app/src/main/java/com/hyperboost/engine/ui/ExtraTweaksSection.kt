@@ -29,7 +29,6 @@ fun ExtraTweaksSection(viewModel: MainViewModel) {
     val isBlurDisabled by viewModel.isBlurDisabled.collectAsState()
     val isThermalOn by viewModel.isThermalOverrideActive.collectAsState()
     val thermalVerified by viewModel.thermalVerified.collectAsState()
-    val pendingSeconds by viewModel.pendingRevertSeconds.collectAsState()
     val isAutoTapRunning by viewModel.isAutoTapRunning.collectAsState()
 
     var showAutoTapDialog by remember { mutableStateOf(false) }
@@ -114,25 +113,6 @@ fun ExtraTweaksSection(viewModel: MainViewModel) {
             onClick = {
                 viewModel.loadUserApps()
                 showFreezeDialog = true
-            }
-        )
-    }
-
-    pendingSeconds?.let { seconds ->
-        AlertDialog(
-            onDismissRequest = {},
-            title = { Text("Keep this display size?") },
-            text = {
-                Text(
-                    "Reverting in ${seconds}s if you don't confirm. " +
-                        "This stops a bad display mode from leaving the screen unusable."
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { viewModel.keepResolution() }) { Text("Keep") }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.revertResolutionNow() }) { Text("Revert now") }
             }
         )
     }

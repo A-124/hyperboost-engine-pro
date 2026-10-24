@@ -23,7 +23,7 @@ android {
     targetSdk = 34
     // CI passes these from the git tag (see .github/workflows/release.yml); local builds use the defaults.
     versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 8
-    versionName = System.getenv("VERSION_NAME") ?: "1.7.1"
+    versionName = System.getenv("VERSION_NAME") ?: "1.7.2"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

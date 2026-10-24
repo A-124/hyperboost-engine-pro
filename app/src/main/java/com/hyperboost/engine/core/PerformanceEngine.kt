@@ -190,38 +190,18 @@ class PerformanceEngine(context: Context) {
     // Display
     // ------------------------------------------------------------------------------------------
 
-    /** Scale display resolution (e.g. 720x1600). Verified by reading `wm size` back. */
-    suspend fun setDisplayResolution(width: Int, height: Int): Result<String> {
-        if (width !in 160..8192 || height !in 160..8192) {
-            return Result.failure(IllegalArgumentException("Unreasonable resolution ${width}x$height"))
-        }
-        markApplied("display", true)
-        val r = exec("wm size ${width}x${height}", "Display resolution set to ${width}x${height}", "Failed to set resolution")
-        if (r.isFailure) return r
-        val now = readOut("wm size").orEmpty()
-        return if (now.contains("Override size: ${width}x$height")) r
-        else Result.failure(RuntimeException("wm size ran but the screen did not change (system says: ${now.lines().lastOrNull().orEmpty()})"))
-    }
-
-    /** Reset display resolution to native hardware panel size. */
+    /**
+     * Reset display resolution to the native panel size. Resolution/scale changes were removed;
+     * these reset paths remain for "Restore" and for cleaning up overrides from older builds.
+     */
     suspend fun resetDisplayResolution(): Result<String> =
         exec("wm size reset", "Display resolution reset to native.", "Failed to reset resolution")
             .onSuccess { markApplied("display", false) }
 
-    /** Set display density (DPI). Verified by reading `wm density` back. */
-    suspend fun setDisplayDensity(dpi: Int): Result<String> {
-        if (dpi !in 80..800) return Result.failure(IllegalArgumentException("Unreasonable density $dpi"))
-        markApplied("display", true)
-        val r = exec("wm density $dpi", "Display density set to $dpi DPI", "Failed to set density")
-        if (r.isFailure) return r
-        val now = readOut("wm density").orEmpty()
-        return if (now.contains("Override density: $dpi")) r
-        else Result.failure(RuntimeException("wm density ran but DPI did not change (system says: ${now.lines().lastOrNull().orEmpty()})"))
-    }
-
     /** Reset display density (DPI) to native. */
     suspend fun resetDisplayDensity(): Result<String> =
         exec("wm density reset", "Display density reset to default.", "Failed to reset density")
+            .onSuccess { markApplied("display", false) }
 
     /** Lock screen refresh rate (e.g. 60 / 90 / 120 / 144 Hz). */
     suspend fun lockRefreshRate(hz: Float): Result<String> = runCatching {
@@ -1013,10 +993,8 @@ class PerformanceEngine(context: Context) {
 
         try {
             val result = ShizukuShellExecutor.execute(script).getOrThrow()
-            val display = getDisplayConfig().getOrNull()
             val state = EngineStateParser.parse(
                 stdout = result.stdout,
-                downscaled = display?.overrideWidth != null,
                 applied = ::wasApplied
             )
             val thermalVerified = if (state.thermalOverride) readThermalOverride() else null

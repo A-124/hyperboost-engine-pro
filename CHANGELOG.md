@@ -1,6 +1,20 @@
 # Changelog
 
-## 1.7.1 - 2026-10-25
+## 1.7.2 - 2026-10-25
+
+### Removed
+- Removed the render-scale/resolution changer completely, including the per-game display profiles. The app no longer changes `wm size` or `wm density`.
+- On the first launch after updating, any display override left by an older build is reset when Shizuku is authorized, and old per-game scale preferences are cleared.
+- Display information remains visible in telemetry, and **Restore My Original Settings** still resets a leftover display override.
+
+### Safety
+- Boost module count is back to 11.
+- If an older build left the display scaled and the app cannot reset it, use:
+  `adb shell wm size reset` and `adb shell wm density reset`.
+
+## 1.7.1 - 2026-10-25 (withdrawn)
+
+> Withdrawn: the render-scale feature was removed in 1.7.2.
 
 ### Fixes
 - Per-game resolution is now a render scale (0.2× / 0.4× / 0.6× / 0.8× / 1×) applied only while the selected game is in front. The previous display is restored when you leave the game or close the app. The global resolution preset card was removed.
@@ -9,7 +23,9 @@
 - In-app updates open Android's system installer through a granted `FileProvider` URI. The withdrawn v1.7.0 build has been removed from the releases page.
 - This patch is the first build with the corrected render-scale and toggle-state behavior.
 
-## 1.7.0 - 2026-10-24
+## 1.7.0 - 2026-10-24 (withdrawn)
+
+> Withdrawn: the render-scale feature was removed in 1.7.2.
 
 ### Truthful state
 - Touch Boost reports success only after `touch_prediction_status` is written and read back. State read-back no longer infers touch boost from the mouse `pointer_speed` setting.

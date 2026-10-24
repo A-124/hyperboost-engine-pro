@@ -39,7 +39,7 @@ The app is designed to work without root. Shizuku provides elevated ADB-level ac
 
 ### Gaming hub and profiles
 - **Master Turbo:** one place to run supported tuning actions.
-- **Per-game profiles:** keep game-related preferences organized, including an optional render scale applied only while that game is in front.
+- **Per-game profiles:** keep game-related preferences organized.
 - **Refresh-rate selection:** choose from rates reported as supported by the device.
 - **Render scale:** 0.2× / 0.4× / 0.6× / 0.8× / 1× per game, blurrier at lower values and restored when you leave the game.
 - **More tuning modules:** cached-apps freezer, adaptive brightness off and a refresh-rate overlay.
@@ -52,7 +52,7 @@ The app is designed to work without root. Shizuku provides elevated ADB-level ac
 - **Floating tools:** optional overlay controls that stay accessible while using supported apps.
 
 ### Display, input, and system tuning
-- **Display resolution scaling:** supported resolution changes, including a lower-resolution option where the device allows it.
+- **Display information:** view the current display size and density. The app does not change them.
 - **Refresh-rate controls:** applies supported settings and can restore the previous behavior.
 - **Touch settings:** supported touch-prediction and debounce options where the device permits.
 - **Animation controls:** adjusts supported window and transition animation settings.
@@ -105,6 +105,17 @@ The app reads the latest release from this repository (`releases/latest`) and th
 - Avoid disabling thermal protection during sustained gaming. Thermal override features remain guarded by automatic temperature limits.
 - Do not share signing keystores, passwords, access tokens, or `.env` files.
 - See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for dependency notices and [PRIVACY_POLICY.md](PRIVACY_POLICY.md) for the privacy policy.
+
+## Display recovery
+
+Current builds do not change display resolution or density. If an older build left the display scaled, connect the phone to ADB and run:
+
+```bash
+adb shell wm size reset
+adb shell wm density reset
+```
+
+Alternatively, start Shizuku and use **Restore My Original Settings** in the app.
 
 ## License
 

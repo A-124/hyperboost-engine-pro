@@ -6,7 +6,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
@@ -102,7 +101,6 @@ fun DashboardScreen(
     var showCrosshairDialog by remember { mutableStateOf(false) }
     var showAdbGuideDialog by remember { mutableStateOf(false) }
     var showFeedbackDialog by remember { mutableStateOf(false) }
-    var configuringGame by remember { mutableStateOf<MainViewModel.GameProfile?>(null) }
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     val currentTab = DashTab.entries[selectedTab]
     val shizukuAuthorized = shizukuStatus == ShizukuManager.ShizukuStatus.AUTHORIZED
@@ -323,8 +321,7 @@ fun DashboardScreen(
                             games = games,
                             onLaunchGame = { viewModel.launchGame(it) },
                             onToggleGameOpt = { viewModel.toggleGameOptimization(it) },
-                            onCompileShaders = { viewModel.compileGameShaders(it) },
-                            onConfigureDisplay = { configuringGame = it }
+                            onCompileShaders = { viewModel.compileGameShaders(it) }
                         )
                     }
                 }
@@ -352,13 +349,6 @@ fun DashboardScreen(
                     snackbarHostState.showSnackbar(if (sent) "Thanks, your feedback was sent." else "Couldn't send feedback. Check your connection and Firebase setup, then try again.")
                 }
             }
-        )
-    }
-    configuringGame?.let { game ->
-        GameDisplayDialog(
-            game = game,
-            onDismiss = { configuringGame = null },
-            onSelect = { scale -> viewModel.setGameDisplayScale(game.packageName, scale) }
         )
     }
 }
@@ -1388,8 +1378,7 @@ fun GameLauncherSection(
     games: List<MainViewModel.GameProfile>,
     onLaunchGame: (MainViewModel.GameProfile) -> Unit,
     onToggleGameOpt: (MainViewModel.GameProfile) -> Unit,
-    onCompileShaders: (MainViewModel.GameProfile) -> Unit,
-    onConfigureDisplay: (MainViewModel.GameProfile) -> Unit
+    onCompileShaders: (MainViewModel.GameProfile) -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -1440,8 +1429,7 @@ fun GameLauncherSection(
                         game = game,
                         onLaunch = { onLaunchGame(game) },
                         onToggleOpt = { onToggleGameOpt(game) },
-                        onCompile = { onCompileShaders(game) },
-                        onConfigureDisplay = { onConfigureDisplay(game) }
+                        onCompile = { onCompileShaders(game) }
                     )
                 }
             }
@@ -1454,10 +1442,8 @@ fun GameCard(
     game: MainViewModel.GameProfile,
     onLaunch: () -> Unit,
     onToggleOpt: () -> Unit,
-    onCompile: () -> Unit,
-    onConfigureDisplay: () -> Unit
+    onCompile: () -> Unit
 ) {
-    val displaySuffix = game.displayScale?.let { " · ${it}×" } ?: ""
     Card(
         modifier = Modifier
             .width(170.dp)
@@ -1503,24 +1489,11 @@ fun GameCard(
                     }
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
-                        onClick = onConfigureDisplay,
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Tune,
-                            contentDescription = "Display profile",
-                            tint = Color(0xFF00E5FF),
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                    Switch(
-                        checked = game.isOptimized,
-                        onCheckedChange = { onToggleOpt() },
-                        modifier = Modifier.size(36.dp)
-                    )
-                }
+                Switch(
+                    checked = game.isOptimized,
+                    onCheckedChange = { onToggleOpt() },
+                    modifier = Modifier.size(36.dp)
+                )
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -1531,9 +1504,9 @@ fun GameCard(
                     color = Color.White
                 )
                 Text(
-                    text = (if (game.isCompiled) "✓ AOT Shaders Compiled"
+                    text = if (game.isCompiled) "✓ AOT Shaders Compiled"
                     else if (game.isOptimized) "Auto-Boost ${game.targetRefreshRate}Hz"
-                    else "Standard Profile") + displaySuffix,
+                    else "Standard Profile",
                     fontSize = 10.sp,
                     color = if (game.isCompiled) Color(0xFF00E676)
                     else if (game.isOptimized) Color(0xFF00E5FF)
@@ -1570,55 +1543,6 @@ fun GameCard(
             }
         }
     }
-}
-
-@Composable
-private fun GameDisplayDialog(
-    game: MainViewModel.GameProfile,
-    onDismiss: () -> Unit,
-    onSelect: (Float) -> Unit
-) {
-    val options: List<Pair<Float, String>> = listOf(
-        0.2f to "0.2×",
-        0.4f to "0.4×",
-        0.6f to "0.6×",
-        0.8f to "0.8×",
-        1.0f to "1×"
-    )
-    val selectedScale = game.displayScale ?: 1.0f
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Game render scale") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(game.appName, fontWeight = FontWeight.Bold)
-                Text(
-                    "Applied only while this game is in front; your previous display is restored when you leave. " +
-                        "Lower scales are blurrier and reduce GPU load.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF90A4AE)
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    options.forEach { (scale, label) ->
-                        FilterChip(
-                            selected = kotlin.math.abs(selectedScale - scale) < 0.001f,
-                            onClick = {
-                                onSelect(scale)
-                                onDismiss()
-                            },
-                            label = { Text(label) }
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Close") }
-        }
-    )
 }
 
 @Composable

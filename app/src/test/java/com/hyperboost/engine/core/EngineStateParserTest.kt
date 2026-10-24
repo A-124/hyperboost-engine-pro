@@ -10,9 +10,8 @@ class EngineStateParserTest {
 
     private fun parse(
         stdout: String,
-        downscaled: Boolean = false,
         applied: Set<String> = emptySet()
-    ) = EngineStateParser.parse(stdout, downscaled, applied::contains)
+    ) = EngineStateParser.parse(stdout, applied::contains)
 
     private val allApplied = setOf(
         "anim", "touch", "wifi", "vulkan", "sf", "sustained", "dnd",
@@ -40,7 +39,6 @@ class EngineStateParserTest {
             brightmode=0
             showhz=1
             """.trimIndent(),
-            downscaled = true,
             applied = allApplied
         )
 
@@ -49,7 +47,6 @@ class EngineStateParserTest {
         assertTrue(state.wifiGaming)
         assertTrue(state.vulkan)
         assertTrue(state.surfaceFlingerLatch)
-        assertTrue(state.downscaled)
         assertTrue(state.sustainedPerformance)
         assertTrue(state.gameDnd)
         assertTrue(state.phantomProtection)

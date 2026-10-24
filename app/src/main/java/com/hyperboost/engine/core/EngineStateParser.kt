@@ -10,7 +10,6 @@ data class EngineState(
     val wifiGaming: Boolean = false,
     val vulkan: Boolean = false,
     val surfaceFlingerLatch: Boolean = false,
-    val downscaled: Boolean = false,
     val sustainedPerformance: Boolean = false,
     val gameDnd: Boolean = false,
     val phantomProtection: Boolean = false,
@@ -30,7 +29,6 @@ object EngineStateParser {
 
     fun parse(
         stdout: String,
-        downscaled: Boolean,
         applied: (String) -> Boolean = { false }
     ): EngineState {
         val values = stdout.lineSequence()
@@ -49,7 +47,6 @@ object EngineStateParser {
             wifiGaming = applied("wifi") && values["wifi"] == "0",
             vulkan = applied("vulkan") && values["hwui"]?.startsWith("skiavk") == true,
             surfaceFlingerLatch = applied("sf") && values["sf"] == "1",
-            downscaled = downscaled,
             sustainedPerformance = applied("sustained") && !(
                 values["sustained"]?.lowercase()?.let {
                     it.contains("false") || it.contains("disabled")

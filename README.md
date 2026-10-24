@@ -41,7 +41,6 @@ The app is designed to work without root. Shizuku provides elevated ADB-level ac
 - **Master Turbo:** one place to run supported tuning actions.
 - **Per-game profiles:** keep game-related preferences organized.
 - **Refresh-rate selection:** choose from rates reported as supported by the device.
-- **Render scale:** 0.2× / 0.4× / 0.6× / 0.8× / 1× per game, blurrier at lower values and restored when you leave the game.
 - **More tuning modules:** cached-apps freezer, adaptive brightness off and a refresh-rate overlay.
 - **Quick access to tools:** open gaming controls and overlays from the dashboard.
 

@@ -164,7 +164,14 @@ jobs:
           cleaned="${cleaned#\"}"; cleaned="${cleaned%\"}"
           cleaned="${cleaned#\'}"; cleaned="${cleaned%\'}"
           if [[ "$cleaned" == data:* ]]; then cleaned="${cleaned#*,}"; fi
+          cleaned="$(printf '%s' "$cleaned" | tr -- '-_' '+/')"
+          while (( ${#cleaned} % 4 != 0 )); do cleaned="${cleaned}="; done
           echo "Encoded keystore length: ${#cleaned}"
+
+          if [[ ! "$cleaned" =~ ^[A-Za-z0-9+/]+={0,2}$ ]]; then
+            echo "::error::KEYSTORE_BASE64 contains characters that are not valid base64."
+            exit 1
+          fi
 
           if ! printf '%s' "$cleaned" | base64 --decode > "$keystore" 2>/tmp/keystore-decode.err; then
             echo "::error::KEYSTORE_BASE64 is not valid base64: $(cat /tmp/keystore-decode.err)"

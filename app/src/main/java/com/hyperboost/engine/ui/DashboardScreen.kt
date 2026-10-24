@@ -83,7 +83,6 @@ fun DashboardScreen(
     val isWifiGamingActive by viewModel.isWifiGamingActive.collectAsState()
     val isVulkanActive by viewModel.isVulkanActive.collectAsState()
     val isSurfaceFlingerUncapped by viewModel.isSurfaceFlingerUncapped.collectAsState()
-    val displayOverrideWidth by viewModel.displayOverrideWidth.collectAsState()
     val isCachedFreezerActive by viewModel.isCachedFreezerActive.collectAsState()
     val isAdaptiveBrightnessOff by viewModel.isAdaptiveBrightnessOff.collectAsState()
     val isShowRefreshRateActive by viewModel.isShowRefreshRateActive.collectAsState()
@@ -252,8 +251,6 @@ fun DashboardScreen(
                     }
                     item(key = "gaming_tuning") {
                         GamingTuningSection(
-                            displayOverrideWidth = displayOverrideWidth,
-                            onSelectResolution = { viewModel.setResolutionPreset(it) },
                             isCachedFreezerActive = isCachedFreezerActive,
                             onToggleFreezer = { viewModel.toggleCachedAppsFreezer() },
                             isAdaptiveBrightnessOff = isAdaptiveBrightnessOff,
@@ -361,7 +358,7 @@ fun DashboardScreen(
         GameDisplayDialog(
             game = game,
             onDismiss = { configuringGame = null },
-            onSelect = { width -> viewModel.setGameDisplayWidth(game.packageName, width) }
+            onSelect = { scale -> viewModel.setGameDisplayScale(game.packageName, scale) }
         )
     }
 }
@@ -736,8 +733,6 @@ fun EasyEnableOptimizationSection(
 /** Resolution presets plus the extra gaming tuning toggles. */
 @Composable
 fun GamingTuningSection(
-    displayOverrideWidth: Int?,
-    onSelectResolution: (Int?) -> Unit,
     isCachedFreezerActive: Boolean,
     onToggleFreezer: () -> Unit,
     isAdaptiveBrightnessOff: Boolean,
@@ -757,8 +752,6 @@ fun GamingTuningSection(
             ),
             color = MaterialTheme.colorScheme.primary
         )
-
-        ResolutionPresetCard(selectedWidth = displayOverrideWidth, onSelect = onSelectResolution)
 
         EasyToggleCard(
             title = "Cached Apps Freezer",
@@ -789,64 +782,6 @@ fun GamingTuningSection(
             tag = "toggle_show_refresh_rate",
             status = if (isShowRefreshRateActive) "Verified on this device" else null
         )
-    }
-}
-
-@Composable
-private fun ResolutionPresetCard(selectedWidth: Int?, onSelect: (Int?) -> Unit) {
-    val options: List<Pair<Int?, String>> = listOf(
-        null to "Native",
-        1080 to "1080p",
-        900 to "900p",
-        720 to "720p"
-    )
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(Icons.Default.AspectRatio, contentDescription = null, tint = Color(0xFF00E5FF), modifier = Modifier.size(20.dp))
-                    Text("Resolution", fontWeight = FontWeight.Bold, color = Color.White)
-                }
-                Text(
-                    selectedWidth?.let { "${it}p" } ?: "Native",
-                    fontSize = 12.sp,
-                    color = NeonGreen,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                options.forEach { (width, label) ->
-                    FilterChip(
-                        selected = selectedWidth == width,
-                        onClick = { onSelect(width) },
-                        label = { Text(label) },
-                        modifier = Modifier.testTag("res_${width ?: "native"}")
-                    )
-                }
-            }
-            Text(
-                "Density scales with the resolution. An unconfirmed change reverts in ${MainViewModel.RESOLUTION_REVERT_SECONDS}s.",
-                fontSize = 10.sp,
-                color = Color(0xFF90A4AE)
-            )
-        }
     }
 }
 
@@ -1522,7 +1457,7 @@ fun GameCard(
     onCompile: () -> Unit,
     onConfigureDisplay: () -> Unit
 ) {
-    val displaySuffix = game.displayWidth?.let { " · ${it}p" } ?: ""
+    val displaySuffix = game.displayScale?.let { " · ${it}×" } ?: ""
     Card(
         modifier = Modifier
             .width(170.dp)
@@ -1641,22 +1576,25 @@ fun GameCard(
 private fun GameDisplayDialog(
     game: MainViewModel.GameProfile,
     onDismiss: () -> Unit,
-    onSelect: (Int?) -> Unit
+    onSelect: (Float) -> Unit
 ) {
-    val options: List<Pair<Int?, String>> = listOf(
-        null to "Native",
-        1080 to "1080p",
-        900 to "900p",
-        720 to "720p"
+    val options: List<Pair<Float, String>> = listOf(
+        0.2f to "0.2×",
+        0.4f to "0.4×",
+        0.6f to "0.6×",
+        0.8f to "0.8×",
+        1.0f to "1×"
     )
+    val selectedScale = game.displayScale ?: 1.0f
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Display profile") },
+        title = { Text("Game render scale") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(game.appName, fontWeight = FontWeight.Bold)
                 Text(
-                    "Resolution applied when this game comes to the front. Your previous display is restored when you leave.",
+                    "Applied only while this game is in front; your previous display is restored when you leave. " +
+                        "Lower scales are blurrier and reduce GPU load.",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF90A4AE)
                 )
@@ -1664,11 +1602,11 @@ private fun GameDisplayDialog(
                     modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    options.forEach { (width, label) ->
+                    options.forEach { (scale, label) ->
                         FilterChip(
-                            selected = game.displayWidth == width,
+                            selected = kotlin.math.abs(selectedScale - scale) < 0.001f,
                             onClick = {
-                                onSelect(width)
+                                onSelect(scale)
                                 onDismiss()
                             },
                             label = { Text(label) }

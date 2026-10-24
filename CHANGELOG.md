@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.7.1 - 2026-10-25
+
+### Fixes
+- Per-game resolution is now a render scale (0.2× / 0.4× / 0.6× / 0.8× / 1×) applied only while the selected game is in front. The previous display is restored when you leave the game or close the app. The global resolution preset card was removed.
+- Lowered the display and density bounds so 0.2× can work on 1080p panels.
+- Fixed switches flipping back on after being disabled. Read-back now requires both the system value and HyperBoost's applied flag, so a pre-existing device setting is never mistaken for a tweak the app applied.
+- In-app updates open Android's system installer through a granted `FileProvider` URI. The withdrawn v1.7.0 build has been removed from the releases page.
+- This patch is the first build with the corrected render-scale and toggle-state behavior.
+
 ## 1.7.0 - 2026-10-24
 
 ### Truthful state

@@ -192,7 +192,7 @@ class PerformanceEngine(context: Context) {
 
     /** Scale display resolution (e.g. 720x1600). Verified by reading `wm size` back. */
     suspend fun setDisplayResolution(width: Int, height: Int): Result<String> {
-        if (width !in 240..8192 || height !in 240..8192) {
+        if (width !in 160..8192 || height !in 160..8192) {
             return Result.failure(IllegalArgumentException("Unreasonable resolution ${width}x$height"))
         }
         markApplied("display", true)
@@ -206,10 +206,11 @@ class PerformanceEngine(context: Context) {
     /** Reset display resolution to native hardware panel size. */
     suspend fun resetDisplayResolution(): Result<String> =
         exec("wm size reset", "Display resolution reset to native.", "Failed to reset resolution")
+            .onSuccess { markApplied("display", false) }
 
     /** Set display density (DPI). Verified by reading `wm density` back. */
     suspend fun setDisplayDensity(dpi: Int): Result<String> {
-        if (dpi !in 120..800) return Result.failure(IllegalArgumentException("Unreasonable density $dpi"))
+        if (dpi !in 80..800) return Result.failure(IllegalArgumentException("Unreasonable density $dpi"))
         markApplied("display", true)
         val r = exec("wm density $dpi", "Display density set to $dpi DPI", "Failed to set density")
         if (r.isFailure) return r
@@ -255,7 +256,7 @@ class PerformanceEngine(context: Context) {
      * Applies to apps launched after the change.
      */
     suspend fun forceVulkanRenderer(enable: Boolean): Result<String> =
-        if (enable) runAll(
+        (if (enable) runAll(
             "Skia-Vulkan renderer forced (restart apps to apply).",
             { putProp("debug.hwui.renderer", "skiavk") },
             { putProp("debug.renderengine.backend", "skiavkthreaded") }
@@ -263,11 +264,11 @@ class PerformanceEngine(context: Context) {
             "Default renderer restored (restart apps to apply).",
             { restoreProp("debug.hwui.renderer") },
             { restoreProp("debug.renderengine.backend") }
-        )
+        )).onSuccess { markApplied("vulkan", enable) }
 
     /** SurfaceFlinger low-latency unsignaled buffer latching. */
     suspend fun setSurfaceFlingerLowLatency(enable: Boolean): Result<String> =
-        if (enable) runAll(
+        (if (enable) runAll(
             "SurfaceFlinger instant buffer latching enabled.",
             { putProp("debug.sf.latch_unsignaled", "1") },
             { soft { putProp("debug.sf.early_app_phase_offset_ns", "500000") } },
@@ -277,7 +278,7 @@ class PerformanceEngine(context: Context) {
             { restoreProp("debug.sf.latch_unsignaled") },
             { restoreProp("debug.sf.early_app_phase_offset_ns") },
             { restoreProp("debug.sf.early_gl_app_phase_offset_ns") }
-        )
+        )).onSuccess { markApplied("sf", enable) }
 
     // ------------------------------------------------------------------------------------------
     // Input / UI responsiveness
@@ -292,7 +293,7 @@ class PerformanceEngine(context: Context) {
             { putSetting("global", "window_animation_scale", scale.toString()) },
             { putSetting("global", "transition_animation_scale", scale.toString()) },
             { putSetting("global", "animator_duration_scale", scale.toString()) }
-        )
+        ).onSuccess { markApplied("anim", scale == 0f) }
     }
 
     /** Restore the user's own animation scales. */
@@ -301,7 +302,7 @@ class PerformanceEngine(context: Context) {
         { restoreSetting("global", "window_animation_scale") },
         { restoreSetting("global", "transition_animation_scale") },
         { restoreSetting("global", "animator_duration_scale") }
-    )
+    ).onSuccess { markApplied("anim", false) }
 
     /**
      * Enables the touch setting the engine can verify, then attempts the optional
@@ -316,11 +317,13 @@ class PerformanceEngine(context: Context) {
 
             return primary.fold(
                 onSuccess = {
+                    markApplied("touch", true)
                     Result.success(
                         "Touch prediction enabled and verified. Long-press and debounce options were applied where supported."
                     )
                 },
                 onFailure = {
+                    markApplied("touch", false)
                     Result.failure(
                         RuntimeException(
                             "This device did not accept touch prediction (${it.message}). Touch latency was not changed.",
@@ -336,7 +339,7 @@ class PerformanceEngine(context: Context) {
             { restoreSetting("system", "touch_prediction_status") },
             { restoreSetting("secure", "long_press_timeout") },
             { restoreProp("debug.touch.press.debounce") }
-        )
+        ).onSuccess { markApplied("touch", false) }
     }
 
     // ------------------------------------------------------------------------------------------
@@ -356,6 +359,7 @@ class PerformanceEngine(context: Context) {
 
             return primary.fold(
                 onSuccess = {
+                    markApplied("wifi", true)
                     Result.success(
                         if (lowLatency) {
                             "Wi-Fi low-latency mode enabled and verified."
@@ -365,6 +369,7 @@ class PerformanceEngine(context: Context) {
                     )
                 },
                 onFailure = {
+                    markApplied("wifi", false)
                     Result.failure(
                         RuntimeException(
                             "This device did not accept the Wi-Fi power-save setting (${it.message}).",
@@ -385,7 +390,7 @@ class PerformanceEngine(context: Context) {
                 }
                 Result.success(Unit)
             }
-        )
+        ).onSuccess { markApplied("wifi", false) }
     }
 
     /** Private DNS hostname for lower-latency lookups (null/blank = turn Private DNS off). */
@@ -483,8 +488,7 @@ class PerformanceEngine(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
             return Result.failure(UnsupportedOperationException("Phantom-process limit only exists on Android 12+"))
         }
-        markApplied("phantom", enable)
-        return if (enable) runAll(
+        return (if (enable) runAll(
             "Phantom-process killer disabled (fewer random background kills).",
             { putSetting("global", "settings_enable_monitor_phantom_procs", "false") },
             {
@@ -500,12 +504,12 @@ class PerformanceEngine(context: Context) {
                     if (it.exitCode != 0) throw RuntimeException("device_config: ${it.errorText()}")
                 }
             }
-        )
+        )).onSuccess { markApplied("phantom", enable) }
     }
 
     /** Turn off Battery Saver and Adaptive Battery so the OS stops throttling CPU/background work. */
     suspend fun setBatteryThrottlingOff(enable: Boolean): Result<String> =
-        if (enable) runAll(
+        (if (enable) runAll(
             "Battery Saver & Adaptive Battery throttling disabled.",
             { putSetting("global", "low_power", "0") },
             { putSetting("global", "adaptive_battery_management_enabled", "0") }
@@ -513,7 +517,7 @@ class PerformanceEngine(context: Context) {
             "Battery throttling settings restored.",
             { restoreSetting("global", "low_power") },
             { restoreSetting("global", "adaptive_battery_management_enabled") }
-        )
+        )).onSuccess { markApplied("battery", enable) }
 
     /** Kill all cached background processes to free RAM (foreground app is untouched). */
     suspend fun killBackgroundApps(): Result<String> =
@@ -640,13 +644,13 @@ class PerformanceEngine(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
             return Result.failure(UnsupportedOperationException("Window blur control needs Android 12+"))
         }
-        return if (enable) runAll(
+        return (if (enable) runAll(
             "Window blurs disabled (less GPU work per frame).",
             { putSetting("global", "disable_window_blurs", "1") }
         ) else runAll(
             "Window blurs restored.",
             { restoreSetting("global", "disable_window_blurs") }
-        )
+        )).onSuccess { markApplied("blur", enable) }
     }
 
     /** Turns Battery Saver off only. Adaptive Battery is left alone (unlike [setBatteryThrottlingOff]). */
@@ -1094,6 +1098,13 @@ class PerformanceEngine(context: Context) {
                 ShizukuShellExecutor.execute("pm enable --user 0 $pkg").getOrNull()?.exitCode == 0
             if (ok) untrackPackage("frozen", pkg) else problems += "could not unfreeze $pkg"
         }
+
+        // Settings-based toggles were restored from their snapshots above; clear their applied
+        // markers so a pre-existing enabled value cannot make a switch look active again.
+        listOf(
+            "anim", "touch", "wifi", "vulkan", "sf", "battery", "blur", "display",
+            "freezer", "brightness", "showhz"
+        ).forEach { markApplied(it, false) }
         problems
     }
 

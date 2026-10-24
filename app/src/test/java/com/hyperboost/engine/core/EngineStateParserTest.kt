@@ -14,6 +14,11 @@ class EngineStateParserTest {
         applied: Set<String> = emptySet()
     ) = EngineStateParser.parse(stdout, downscaled, applied::contains)
 
+    private val allApplied = setOf(
+        "anim", "touch", "wifi", "vulkan", "sf", "sustained", "dnd",
+        "phantom", "battery", "blur", "freezer", "brightness", "showhz"
+    )
+
     @Test
     fun `reads the settings the engine actually writes`() {
         val state = parse(
@@ -31,8 +36,12 @@ class EngineStateParserTest {
             dns=one.one.one.one
             sustained=true
             blur=1
+            freezer=enabled
+            brightmode=0
+            showhz=1
             """.trimIndent(),
-            downscaled = true
+            downscaled = true,
+            applied = allApplied
         )
 
         assertTrue(state.zeroAnimations)
@@ -46,13 +55,51 @@ class EngineStateParserTest {
         assertTrue(state.phantomProtection)
         assertTrue(state.batterySaverOff)
         assertTrue(state.blurDisabled)
+        assertTrue(state.cachedAppsFreezer)
+        assertTrue(state.adaptiveBrightnessOff)
+        assertTrue(state.showRefreshRate)
         assertEquals(90, state.refreshRateHz)
         assertEquals("one.one.one.one", state.privateDns)
     }
 
     @Test
+    fun `pre-existing enabled settings do not show as applied`() {
+        val state = parse(
+            """
+            anim=0.0
+            touchpred=1
+            wifi=0
+            hwui=skiavk
+            sf=1
+            zen=1
+            phantom=false
+            adaptive=0
+            sustained=true
+            blur=1
+            freezer=enabled
+            brightmode=0
+            showhz=1
+            """.trimIndent()
+        )
+
+        assertFalse(state.zeroAnimations)
+        assertFalse(state.touchBoost)
+        assertFalse(state.wifiGaming)
+        assertFalse(state.vulkan)
+        assertFalse(state.surfaceFlingerLatch)
+        assertFalse(state.sustainedPerformance)
+        assertFalse(state.gameDnd)
+        assertFalse(state.phantomProtection)
+        assertFalse(state.batterySaverOff)
+        assertFalse(state.blurDisabled)
+        assertFalse(state.cachedAppsFreezer)
+        assertFalse(state.adaptiveBrightnessOff)
+        assertFalse(state.showRefreshRate)
+    }
+
+    @Test
     fun `pointer speed never implies touch boost`() {
-        val state = parse("ptr=7\ntouchpred=0")
+        val state = parse("ptr=7\ntouchpred=0", applied = setOf("touch"))
         assertFalse(state.touchBoost)
     }
 
@@ -70,10 +117,10 @@ class EngineStateParserTest {
     }
 
     @Test
-    fun `sustained falls back to the persisted flag when the service is silent`() {
+    fun `sustained requires the applied flag`() {
         assertTrue(parse("sustained=", applied = setOf("sustained")).sustainedPerformance)
         assertFalse(parse("sustained=").sustainedPerformance)
-        assertTrue(parse("sustained=enabled").sustainedPerformance)
+        assertTrue(parse("sustained=enabled", applied = setOf("sustained")).sustainedPerformance)
         assertFalse(parse("sustained=disabled", applied = setOf("sustained")).sustainedPerformance)
     }
 
@@ -86,7 +133,10 @@ class EngineStateParserTest {
 
     @Test
     fun `reads the extra tuning modules`() {
-        val state = parse("freezer=enabled\nbrightmode=0\nshowhz=1")
+        val state = parse(
+            "freezer=enabled\nbrightmode=0\nshowhz=1",
+            applied = setOf("freezer", "brightness", "showhz")
+        )
         assertTrue(state.cachedAppsFreezer)
         assertTrue(state.adaptiveBrightnessOff)
         assertTrue(state.showRefreshRate)

@@ -41,31 +41,29 @@ object EngineStateParser {
             .toMap()
 
         return EngineState(
-            zeroAnimations = values["anim"]?.toFloatOrNull() == 0f,
-            // touch_prediction_status is the setting the engine actually writes. pointer_speed
-            // is a mouse setting and must never be used to infer touchscreen boost state.
-            touchBoost = values["touchpred"] == "1",
-            wifiGaming = values["wifi"] == "0",
-            vulkan = values["hwui"]?.startsWith("skiavk") == true,
-            surfaceFlingerLatch = values["sf"] == "1",
+            // A raw setting that is already in the "enabled" position is not enough: the
+            // feature must have been applied by HyperBoost. Otherwise turning it off would
+            // restore the user's pre-existing value and make the toggle flip back on.
+            zeroAnimations = applied("anim") && values["anim"]?.toFloatOrNull() == 0f,
+            touchBoost = applied("touch") && values["touchpred"] == "1",
+            wifiGaming = applied("wifi") && values["wifi"] == "0",
+            vulkan = applied("vulkan") && values["hwui"]?.startsWith("skiavk") == true,
+            surfaceFlingerLatch = applied("sf") && values["sf"] == "1",
             downscaled = downscaled,
-            sustainedPerformance = values["sustained"]?.lowercase()?.let { value ->
-                when {
-                    value.isBlank() -> applied("sustained")
-                    value.contains("true") -> true
-                    value.contains("false") || value.contains("disabled") -> false
-                    value.contains("enabled") -> true
-                    else -> applied("sustained")
-                }
-            } ?: applied("sustained"),
-            gameDnd = (values["zen"]?.toIntOrNull() ?: 0) != 0,
-            phantomProtection = values["phantom"] == "false",
-            batterySaverOff = values["adaptive"] == "0",
-            blurDisabled = values["blur"] == "1",
+            sustainedPerformance = applied("sustained") && !(
+                values["sustained"]?.lowercase()?.let {
+                    it.contains("false") || it.contains("disabled")
+                } ?: false
+                ),
+            gameDnd = applied("dnd") && (values["zen"]?.toIntOrNull() ?: 0) != 0,
+            phantomProtection = applied("phantom") && values["phantom"] == "false",
+            batterySaverOff = applied("battery") && values["adaptive"] == "0",
+            blurDisabled = applied("blur") && values["blur"] == "1",
             thermalOverride = applied("thermal"),
-            cachedAppsFreezer = values["freezer"] == "enabled" || values["freezer"] == "1",
-            adaptiveBrightnessOff = values["brightmode"] == "0",
-            showRefreshRate = values["showhz"] == "1",
+            cachedAppsFreezer = applied("freezer") &&
+                (values["freezer"] == "enabled" || values["freezer"] == "1"),
+            adaptiveBrightnessOff = applied("brightness") && values["brightmode"] == "0",
+            showRefreshRate = applied("showhz") && values["showhz"] == "1",
             refreshRateHz = values["minhz"]?.toFloatOrNull()?.toInt()?.takeIf { it > 0 },
             privateDns = if (values["dnsmode"] == "hostname") {
                 values["dns"]?.takeIf { it.isNotBlank() && it != "null" }

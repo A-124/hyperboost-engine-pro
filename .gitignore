@@ -1,36 +1,71 @@
-*.iml
-.gradle
-.kotlin
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
+# Environment variables and local secrets
 .env
-debug.keystore
+.env.*
+!.env.example
+!.env.sample
+!.env.template
 
-# Signing material: NEVER commit these
+# Private keys, certificates, signing configs
 *.jks
 *.keystore
 *.p12
+*.pfx
+*.pem
+*.key
+*.mobileprovision
 keystore.properties
-/dist
-/dist-public-release
+signing.properties
+key.properties
+secrets.properties
 
-# Keep each contributor's Firebase project private
+# Firebase / Google service credentials
+/google-services.json
+**/google-services.json
 app/google-services.json
+*service-account*.json
+*firebase-adminsdk*.json
 .firebaserc
 .firebase/
 firebase-debug.log
+firebase-debug.*.log
 
-# JVM crash logs
+# Android / Gradle generated files
+.gradle/
+.kotlin/
+**/build/
+**/captures/
+.externalNativeBuild/
+.cxx/
+local.properties
+*.iml
+
+# IDE and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Distribution / generated outputs
+/dist/
+/dist-public-release/
+/release/
+/outputs/
+
+# Node / JavaScript tooling (if used by project tooling)
+node_modules/
+.npm/
+.pnpm-store/
+.vercel/
+.turbo/
+coverage/
+
+# Logs and crash dumps
+*.log
 hs_err_pid*.log
 replay_pid*.log
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+*~

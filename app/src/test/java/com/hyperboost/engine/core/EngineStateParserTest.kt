@@ -85,6 +85,22 @@ class EngineStateParserTest {
     }
 
     @Test
+    fun `reads the extra tuning modules`() {
+        val state = parse("freezer=enabled\nbrightmode=0\nshowhz=1")
+        assertTrue(state.cachedAppsFreezer)
+        assertTrue(state.adaptiveBrightnessOff)
+        assertTrue(state.showRefreshRate)
+    }
+
+    @Test
+    fun `extra tuning modules default off`() {
+        val state = parse("freezer=disabled\nbrightmode=1\nshowhz=0")
+        assertFalse(state.cachedAppsFreezer)
+        assertFalse(state.adaptiveBrightnessOff)
+        assertFalse(state.showRefreshRate)
+    }
+
+    @Test
     fun `thermal override uses the applied flag and starts unverified`() {
         val state = parse("", applied = setOf("thermal"))
         assertTrue(state.thermalOverride)

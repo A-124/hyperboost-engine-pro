@@ -652,6 +652,44 @@ class PerformanceEngine(context: Context) {
     /** Turns Battery Saver off only. Adaptive Battery is left alone (unlike [setBatteryThrottlingOff]). */
     suspend fun turnOffBatterySaver(): Result<Unit> = putSetting("global", "low_power", "0")
 
+    /** Android 11+ cached-app freezer. More aggressive freezing can keep memory free during games. */
+    suspend fun setCachedAppsFreezer(enable: Boolean): Result<String> {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            return Result.failure(UnsupportedOperationException("Cached-app freezer needs Android 11+"))
+        }
+        return flagged("freezer", enable) {
+            if (enable) runAll(
+                "Cached apps freezer enabled.",
+                { putSetting("global", "cached_apps_freezer", "enabled") }
+            ) else runAll(
+                "Cached apps freezer restored.",
+                { restoreSetting("global", "cached_apps_freezer") }
+            )
+        }
+    }
+
+    /** Stops the screen from changing brightness automatically during a session. */
+    suspend fun setAdaptiveBrightnessOff(enable: Boolean): Result<String> = flagged("brightness", enable) {
+        if (enable) runAll(
+            "Adaptive brightness off.",
+            { putSetting("system", "screen_brightness_mode", "0") }
+        ) else runAll(
+            "Adaptive brightness restored.",
+            { restoreSetting("system", "screen_brightness_mode") }
+        )
+    }
+
+    /** Shows Android's refresh-rate overlay (developer display option). */
+    suspend fun setShowRefreshRate(enable: Boolean): Result<String> = flagged("showhz", enable) {
+        if (enable) runAll(
+            "Refresh-rate overlay on.",
+            { putSetting("system", "show_refresh_rate", "1") }
+        ) else runAll(
+            "Refresh-rate overlay restored.",
+            { restoreSetting("system", "show_refresh_rate") }
+        )
+    }
+
     /**
      * Asks the thermal service to report "no throttling", so clocks are not cut when the chip heats up.
      * This is the riskiest tweak in the engine. The ViewModel only enables it together with a
@@ -963,7 +1001,10 @@ class PerformanceEngine(context: Context) {
             "echo dnsmode=\$(settings get global private_dns_mode)",
             "echo dns=\$(settings get global private_dns_specifier)",
             "echo sustained=\$(cmd power get-fixed-performance-mode-enabled 2>/dev/null)",
-            "echo blur=\$(settings get global disable_window_blurs)"
+            "echo blur=\$(settings get global disable_window_blurs)",
+            "echo freezer=\$(settings get global cached_apps_freezer)",
+            "echo brightmode=\$(settings get system screen_brightness_mode)",
+            "echo showhz=\$(settings get system show_refresh_rate)"
         ).joinToString("; ")
 
         try {
@@ -1019,8 +1060,10 @@ class PerformanceEngine(context: Context) {
         if (wasApplied("cachedprocs")) setCachedProcessLimit(false).onFailure { problems += it.message ?: "cached apps" }
         if (wasApplied("forcedark")) setForceDark(false).onFailure { problems += it.message ?: "dark theme" }
         // Settings-based tweaks were already restored from their snapshots in step 1; clear their flags.
-        listOf("stayawake", "landscape", "radio", "touchoverlay", "nightlight", "grayscale", "dim", "font", "timeout")
-            .forEach { markApplied(it, false) }
+        listOf(
+            "stayawake", "landscape", "radio", "touchoverlay", "nightlight", "grayscale", "dim", "font", "timeout",
+            "freezer", "brightness", "showhz"
+        ).forEach { markApplied(it, false) }
 
         if (wasApplied("thermal")) setThermalOverride(false).onFailure { problems += it.message ?: "thermal" }
 

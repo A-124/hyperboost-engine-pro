@@ -1,6 +1,7 @@
 package com.hyperboost.engine.update
 
-import android.app.PendingIntent
+import android.content.ActivityNotFoundException
+import android.content.ClipData
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -9,6 +10,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import androidx.annotation.RequiresApi
+import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -217,41 +219,36 @@ object UpdateManager {
     }
 
     /**
-     * Sends the APK through PackageInstaller so Android reports the actual install result
-     * back to the app instead of leaving the updater blind after opening an APK URI.
+     * Opens Android's system package installer with a granted content URI. This is the
+     * compatible path on OEM builds; PackageInstaller sessions are not used because some
+     * installers reject them with opaque errors.
      */
     fun launchInstallIntent(context: Context, apk: File) {
         require(apk.isFile && apk.length() > 0L) { "The downloaded update APK is missing or empty." }
 
-        val installer = context.packageManager.packageInstaller
-        val params = android.content.pm.PackageInstaller.SessionParams(
-            android.content.pm.PackageInstaller.SessionParams.MODE_FULL_INSTALL
-        ).apply {
-            setAppPackageName(context.packageName)
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.updates", apk)
+        val grant = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK
+        val view = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "application/vnd.android.package-archive")
+            addFlags(grant)
+            clipData = ClipData.newRawUri("HyperBoost update", uri)
         }
-        val sessionId = installer.createSession(params)
         try {
-            installer.openSession(sessionId).use { session ->
-                apk.inputStream().use { input ->
-                    session.openWrite("base.apk", 0L, apk.length()).use { output ->
-                        input.copyTo(output)
-                        session.fsync(output)
-                    }
-                }
-                val callback = Intent(context, UpdateInstallReceiver::class.java)
-                    .setAction(UpdateInstallReceiver.ACTION_INSTALL_STATUS)
-                    .putExtra(UpdateInstallReceiver.EXTRA_VERSION, apk.name)
-                val pendingIntent = PendingIntent.getBroadcast(
-                    context,
-                    sessionId,
-                    callback,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-                )
-                session.commit(pendingIntent.intentSender)
-            }
-        } catch (error: Exception) {
-            runCatching { installer.abandonSession(sessionId) }
-            throw error
+            context.startActivity(view)
+            return
+        } catch (_: ActivityNotFoundException) {
+            // Some older installers only advertise ACTION_INSTALL_PACKAGE.
+        }
+
+        val legacy = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
+            data = uri
+            addFlags(grant)
+            clipData = ClipData.newRawUri("HyperBoost update", uri)
+        }
+        try {
+            context.startActivity(legacy)
+        } catch (error: ActivityNotFoundException) {
+            throw IllegalStateException("No system package installer is available on this device.", error)
         }
     }
 

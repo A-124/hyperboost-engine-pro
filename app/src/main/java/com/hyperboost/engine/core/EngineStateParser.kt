@@ -18,6 +18,9 @@ data class EngineState(
     val blurDisabled: Boolean = false,
     val thermalOverride: Boolean = false,
     val thermalVerified: Boolean? = null,
+    val cachedAppsFreezer: Boolean = false,
+    val adaptiveBrightnessOff: Boolean = false,
+    val showRefreshRate: Boolean = false,
     val refreshRateHz: Int? = null,
     val privateDns: String? = null
 )
@@ -60,6 +63,9 @@ object EngineStateParser {
             batterySaverOff = values["adaptive"] == "0",
             blurDisabled = values["blur"] == "1",
             thermalOverride = applied("thermal"),
+            cachedAppsFreezer = values["freezer"] == "enabled" || values["freezer"] == "1",
+            adaptiveBrightnessOff = values["brightmode"] == "0",
+            showRefreshRate = values["showhz"] == "1",
             refreshRateHz = values["minhz"]?.toFloatOrNull()?.toInt()?.takeIf { it > 0 },
             privateDns = if (values["dnsmode"] == "hostname") {
                 values["dns"]?.takeIf { it.isNotBlank() && it != "null" }

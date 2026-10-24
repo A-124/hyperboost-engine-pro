@@ -3,10 +3,8 @@ package com.hyperboost.engine
 
 import android.Manifest
 import android.app.AlertDialog
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -45,12 +43,6 @@ class MainActivity : ComponentActivity() {
 
     private var pendingUpdate: UpdateInfo? = null
 
-    private val updateInstallFailureReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            showPendingInstallFailure()
-        }
-    }
-
     private val requestNotificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             // Notification permission handled
@@ -80,23 +72,15 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         viewModel.setUiVisible(true)
-        ContextCompat.registerReceiver(
-            this,
-            updateInstallFailureReceiver,
-            IntentFilter(com.hyperboost.engine.update.UpdateInstallReceiver.ACTION_INSTALL_FAILED),
-            ContextCompat.RECEIVER_NOT_EXPORTED
-        )
     }
 
     override fun onStop() {
         viewModel.setUiVisible(false)
-        runCatching { unregisterReceiver(updateInstallFailureReceiver) }
         super.onStop()
     }
 
     override fun onResume() {
         super.onResume()
-        showPendingInstallFailure()
         viewModel.reevaluateShizuku()
         viewModel.refreshDisplayConfig()
 
@@ -106,20 +90,6 @@ class MainActivity : ComponentActivity() {
         if (pending != null && (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || packageManager.canRequestPackageInstalls())) {
             pendingUpdate = null
             startUpdateDownload(pending)
-        }
-    }
-
-    private fun showPendingInstallFailure() {
-        val prefs = getSharedPreferences(com.hyperboost.engine.update.UpdateInstallReceiver.PREFS, Context.MODE_PRIVATE)
-        val message = prefs.getString(com.hyperboost.engine.update.UpdateInstallReceiver.KEY_FAILURE, null)
-            ?: return
-        prefs.edit().remove(com.hyperboost.engine.update.UpdateInstallReceiver.KEY_FAILURE).apply()
-        if (!isFinishing) {
-            AlertDialog.Builder(this)
-                .setTitle("Update couldn't install")
-                .setMessage(message)
-                .setPositiveButton("OK", null)
-                .show()
         }
     }
 
@@ -269,7 +239,19 @@ class MainActivity : ComponentActivity() {
                     .show()
             }
             else -> {
-                UpdateManager.launchInstallIntent(this, apkFile)
+                try {
+                    UpdateManager.launchInstallIntent(this, apkFile)
+                } catch (e: Exception) {
+                    AlertDialog.Builder(this)
+                        .setTitle("Couldn't open installer")
+                        .setMessage(
+                            "Android's package installer could not be opened (${e.message}). " +
+                                "You can share the APK and install it manually."
+                        )
+                        .setPositiveButton("Share APK") { _, _ -> shareApk(apkFile, update.version) }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                }
             }
         }
     }

@@ -42,10 +42,6 @@
                 android:resource="@xml/file_paths_update" />
         </provider>
 
-        <receiver
-            android:name=".update.UpdateInstallReceiver"
-            android:exported="false" />
-
         <!-- Shizuku Content Provider integration -->
         <provider
             android:name="rikka.shizuku.ShizukuProvider"

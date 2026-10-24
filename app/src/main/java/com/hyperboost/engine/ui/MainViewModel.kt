@@ -81,7 +81,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val targetRefreshRate: Int = 120,
         val forceVulkan: Boolean = true,
         val isOptimized: Boolean = false,
-        val isCompiled: Boolean = false
+        val isCompiled: Boolean = false,
+        /** Per-game resolution width in px; null = use the device display. */
+        val displayWidth: Int? = null
     )
 
     /** Every value is a real measurement; null means "not measurable right now" (never faked). */
@@ -165,6 +167,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _thermalVerified = MutableStateFlow<Boolean?>(null)
     val thermalVerified: StateFlow<Boolean?> = _thermalVerified.asStateFlow()
 
+    private val _isCachedFreezerActive = MutableStateFlow(false)
+    val isCachedFreezerActive: StateFlow<Boolean> = _isCachedFreezerActive.asStateFlow()
+
+    private val _isAdaptiveBrightnessOff = MutableStateFlow(false)
+    val isAdaptiveBrightnessOff: StateFlow<Boolean> = _isAdaptiveBrightnessOff.asStateFlow()
+
+    private val _isShowRefreshRateActive = MutableStateFlow(false)
+    val isShowRefreshRateActive: StateFlow<Boolean> = _isShowRefreshRateActive.asStateFlow()
+
+    /** Current wm size override, or null for native. */
+    private val _displayOverrideWidth = MutableStateFlow<Int?>(null)
+    val displayOverrideWidth: StateFlow<Int?> = _displayOverrideWidth.asStateFlow()
+
     /** Seconds left to confirm a display-size change, or null when nothing is waiting for confirmation. */
     private val _pendingRevertSeconds = MutableStateFlow<Int?>(null)
     val pendingRevertSeconds: StateFlow<Int?> = _pendingRevertSeconds.asStateFlow()
@@ -230,6 +245,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     /** Package whose profile is currently applied (so a profile is applied once per session, not per event). */
     private var activeProfilePackage: String? = null
     private var profileLockedRefresh = false
+    private var gameDisplayPackage: String? = null
+    private var gameDisplayBackup: PerformanceEngine.DisplayConfig? = null
 
     private val knownGamePrefixes = listOf(
         "com.tencent.ig", "com.pubg", "com.activision.callofduty", "com.garena.game", "com.miHoYo",
@@ -342,6 +359,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _isThermalOverrideActive.value =
             s.thermalOverride && thermalGuardJob != null && s.thermalVerified != false
         _thermalVerified.value = s.thermalVerified
+        _isCachedFreezerActive.value = s.cachedAppsFreezer
+        _isAdaptiveBrightnessOff.value = s.adaptiveBrightnessOff
+        _isShowRefreshRateActive.value = s.showRefreshRate
         _selectedRefreshRate.value = s.refreshRateHz ?: _telemetryState.value.refreshRateHz
         _selectedDns.value = s.privateDns
         _isMasterTurboActive.value =
@@ -587,6 +607,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun toggleWindowBlur() =
         runToggle(_isBlurDisabled, "Window blur") { performanceEngine.setWindowBlurDisabled(it) }
 
+    fun toggleCachedAppsFreezer() =
+        runToggle(_isCachedFreezerActive, "Cached apps freezer") { performanceEngine.setCachedAppsFreezer(it) }
+
+    fun toggleAdaptiveBrightness() =
+        runToggle(_isAdaptiveBrightnessOff, "Adaptive brightness") { performanceEngine.setAdaptiveBrightnessOff(it) }
+
+    fun toggleShowRefreshRate() =
+        runToggle(_isShowRefreshRateActive, "Refresh-rate overlay") { performanceEngine.setShowRefreshRate(it) }
+
     /**
      * Thermal throttling override. It is only enabled while the temperature guard is running, and it
      * can't outlive this screen: [onCleared] turns it off again.
@@ -707,6 +736,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 performanceEngine.resetDisplayResolution().getOrThrow()
                 performanceEngine.resetDisplayDensity().getOrThrow()
                 _isDownscaled720p.value = false
+                _displayOverrideWidth.value = null
                 _userFeedbackMessage.emit(message)
             } catch (e: Exception) {
                 _userFeedbackMessage.emit("Display reset error: ${e.message}")
@@ -888,32 +918,34 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun toggleDownscale720p() {
+    /** Applies a display-width preset (null = native). Density scales with the width. */
+    fun setResolutionPreset(width: Int?) {
         viewModelScope.launch {
             _isBusy.value = true
-            val next = !_isDownscaled720p.value
             try {
-                if (next) {
-                    val config = performanceEngine.getDisplayConfig().getOrNull()
-                    val targetW = 720
-                    val targetH = if (config != null && config.physicalWidth > 0) {
-                        (config.physicalHeight * 720) / config.physicalWidth
-                    } else 1600
-                    // Scale DPI with the resolution so the UI keeps its proportions (not a fixed 280).
-                    val targetDpi = if (config != null && config.physicalWidth > 0) {
-                        (config.physicalDensity * targetW / config.physicalWidth).coerceIn(160, 600)
-                    } else 280
-                    performanceEngine.setDisplayResolution(targetW, targetH).getOrThrow()
-                    performanceEngine.setDisplayDensity(targetDpi).getOrThrow()
-                    _isDownscaled720p.value = true
-                    _userFeedbackMessage.emit("Display scaled to 720p (${targetW}x${targetH} @ ${targetDpi}dpi) — confirm within ${RESOLUTION_REVERT_SECONDS}s")
-                    // Unconfirmed sizes revert on their own, so a bad mode can't leave the screen unusable.
-                    startResolutionRevertCountdown()
-                } else {
+                if (width == null) {
                     performanceEngine.resetDisplayResolution().getOrThrow()
                     performanceEngine.resetDisplayDensity().getOrThrow()
                     _isDownscaled720p.value = false
+                    _displayOverrideWidth.value = null
                     _userFeedbackMessage.emit("Native display resolution restored.")
+                } else {
+                    val config = performanceEngine.getDisplayConfig().getOrNull()
+                        ?: throw IllegalStateException("Could not read the display configuration.")
+                    if (config.physicalWidth <= 0) {
+                        throw IllegalStateException("The device did not report its panel width.")
+                    }
+                    val targetH = (config.physicalHeight * width) / config.physicalWidth
+                    val targetDpi = (config.physicalDensity * width / config.physicalWidth).coerceIn(160, 600)
+                    performanceEngine.setDisplayResolution(width, targetH).getOrThrow()
+                    performanceEngine.setDisplayDensity(targetDpi).getOrThrow()
+                    _isDownscaled720p.value = true
+                    _displayOverrideWidth.value = width
+                    _userFeedbackMessage.emit(
+                        "Display set to ${width}p (${width}x$targetH @ ${targetDpi}dpi) — confirm within ${RESOLUTION_REVERT_SECONDS}s"
+                    )
+                    // Unconfirmed sizes revert on their own, so a bad mode can't leave the screen unusable.
+                    startResolutionRevertCountdown()
                 }
                 reconcileEngineState()
             } catch (e: Exception) {
@@ -1056,9 +1088,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun setGameDisplayWidth(packageName: String, width: Int?) {
+        _installedGames.update { list ->
+            list.map { if (it.packageName == packageName) it.copy(displayWidth = width) else it }
+        }
+        gamePrefs.edit().putInt("res/$packageName", width ?: 0).apply()
+        emitMessage(
+            if (width == null) "This game will use the device display."
+            else "Saved ${width}p display for this game."
+        )
+    }
+
     private fun applyGameProfile(game: GameProfile) {
         viewModelScope.launch {
             val results = mutableListOf<String>()
+            if (gameDisplayPackage != null && gameDisplayPackage != game.packageName) restoreGameDisplay()
+            if (game.displayWidth != null) {
+                applyGameDisplay(game.displayWidth, game.packageName)
+                    .onFailure { results += "display: ${it.message}" }
+            }
             // Clamp to what the panel really supports instead of requesting a rate it doesn't have.
             val hz = _supportedRefreshRates.value
                 .filter { it <= game.targetRefreshRate }.maxOrNull() ?: maxRefreshRate
@@ -1081,6 +1129,59 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private suspend fun applyGameDisplay(width: Int, packageName: String): Result<Unit> {
+        if (gameDisplayPackage == packageName) return Result.success(Unit)
+        if (gameDisplayPackage != null) restoreGameDisplay()
+        return try {
+            val config = performanceEngine.getDisplayConfig().getOrNull()
+                ?: throw IllegalStateException("Could not read the display configuration.")
+            if (config.physicalWidth <= 0) throw IllegalStateException("The device did not report its panel width.")
+            gameDisplayBackup = config
+            gameDisplayPackage = packageName
+            val targetH = (config.physicalHeight * width) / config.physicalWidth
+            val targetDpi = (config.physicalDensity * width / config.physicalWidth).coerceIn(160, 600)
+            performanceEngine.setDisplayResolution(width, targetH).getOrThrow()
+            performanceEngine.setDisplayDensity(targetDpi).getOrThrow()
+            _displayOverrideWidth.value = width
+            _isDownscaled720p.value = true
+            _userFeedbackMessage.emit("Display set to ${width}p for this game; it will be restored when you leave.")
+            Result.success(Unit)
+        } catch (e: Exception) {
+            gameDisplayBackup = null
+            gameDisplayPackage = null
+            Result.failure(e)
+        }
+    }
+
+    private suspend fun restoreGameDisplay() {
+        val packageName = gameDisplayPackage ?: return
+        val backup = gameDisplayBackup
+        gameDisplayPackage = null
+        gameDisplayBackup = null
+        try {
+            val width = backup?.overrideWidth
+            val height = backup?.overrideHeight
+            if (width != null && height != null) {
+                performanceEngine.setDisplayResolution(width, height)
+                val density = backup?.overrideDensity
+                if (density != null) performanceEngine.setDisplayDensity(density)
+                else performanceEngine.resetDisplayDensity()
+                _displayOverrideWidth.value = width
+                _isDownscaled720p.value = true
+            } else {
+                performanceEngine.resetDisplayResolution()
+                performanceEngine.resetDisplayDensity()
+                _displayOverrideWidth.value = null
+                _isDownscaled720p.value = false
+            }
+            refreshDisplayConfig()
+            _userFeedbackMessage.emit("Display restored after leaving $packageName.")
+        } catch (e: Exception) {
+            _userFeedbackMessage.emit("Could not restore display after leaving $packageName: ${e.message}")
+            syncStateFromDevice()
+        }
+    }
+
     fun refreshDisplayConfig() {
         viewModelScope.launch {
             val config = performanceEngine.getDisplayConfig().getOrNull()
@@ -1090,6 +1191,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 } else {
                     "${config.physicalWidth}x${config.physicalHeight} (Native)"
                 }
+                _displayOverrideWidth.value = config.overrideWidth
+                _isDownscaled720p.value = config.overrideWidth != null
                 _telemetryState.update { it.copy(displayResolution = resString) }
             }
         }
@@ -1119,7 +1222,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         forceVulkan = true,
                         // Remembered per game; new games default to auto-boost on.
                         isOptimized = gamePrefs.getBoolean("opt/${app.packageName}", true),
-                        isCompiled = gamePrefs.getBoolean("compiled/${app.packageName}", false)
+                        isCompiled = gamePrefs.getBoolean("compiled/${app.packageName}", false),
+                        displayWidth = gamePrefs.getInt("res/${app.packageName}", 0).takeIf { it > 0 }
                     )
                 }
                 .sortedBy { it.appName.lowercase() }
@@ -1324,6 +1428,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     .onSuccess { _advancedActive.update { it - "landscape" } }
             }
         }
+        restoreGameDisplay()
         sessionApplied.clear()
     }
 }

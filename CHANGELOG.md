@@ -9,12 +9,19 @@
 - Core toggles re-read the device after each action, so the switches reflect the phone rather than the last request.
 - Compiled-game state now persists across app restarts.
 
+### More gaming tuning
+- Resolution presets for Native, 1080p, 900p and 720p, with density scaled to keep the UI proportional and the existing 6-second safety revert.
+- Cached Apps Freezer (Android 11+), Adaptive Brightness Off and Show Refresh Rate modules on the Boost tab.
+- Per-game display profiles: choose a resolution per game; it is applied when the game comes to the front and the previous display is restored when you leave.
+
 ### Updates and storage
+- In-app updates now hand the verified APK to Android's system installer through a granted `FileProvider` URI instead of using `PackageInstaller` sessions. This fixes install failures reported as `Flags = ...` on some OEM builds.
+- Removed the install-result receiver; the system installer now owns the confirmation step.
 - Signature-conflict APK export uses `MediaStore.Downloads` on Android 10+ and legacy storage on older versions, with a share-sheet fallback. The dialog shows the real saved location instead of assuming Downloads.
 - Device-specific setting snapshots are excluded from cloud backup and device transfer.
 
 ### Cleanup
-- Removed the unused `FrametimeAnalyzer`, `SectionHeader`, template tests, unused usage-stats permission, and unused accessibility gesture APIs.
+- Removed the unused `FrametimeAnalyzer`, `SectionHeader`, `UpdateInstallReceiver`, template tests, unused usage-stats permission, and unused accessibility gesture APIs.
 - The accessibility service is now documented as optional foreground-game detection; Auto Tap continues to use Shizuku.
 - Expanded third-party notices for Firebase, Shizuku, AndroidX/Compose, Kotlin and test libraries.
 - Added `EngineStateParser` and `FeedbackRepository` unit tests.

@@ -39,8 +39,10 @@ The app is designed to work without root. Shizuku provides elevated ADB-level ac
 
 ### Gaming hub and profiles
 - **Master Turbo:** one place to run supported tuning actions.
-- **Per-game profiles:** keep game-related preferences organized.
+- **Per-game profiles:** keep game-related preferences organized, including an optional display resolution applied while that game is in front.
 - **Refresh-rate selection:** choose from rates reported as supported by the device.
+- **Resolution presets:** Native, 1080p, 900p or 720p with density scaled to match.
+- **More tuning modules:** cached-apps freezer, adaptive brightness off and a refresh-rate overlay.
 - **Quick access to tools:** open gaming controls and overlays from the dashboard.
 
 ### Live telemetry and floating overlays
@@ -69,7 +71,7 @@ The app is designed to work without root. Shizuku provides elevated ADB-level ac
 - **Read-back checks:** selected operations are checked against the device's reported state where possible.
 - **Thermal-aware safeguards:** some options include guards intended to reduce unsafe or unsuitable use.
 - **Status and error feedback:** unsupported or rejected operations are reported rather than silently treated as successful.
-- **Update flow:** includes update checking and a guided APK update/install flow when a compatible release is available.
+- **Update flow:** checks for updates, verifies the APK checksum, and opens Android's system installer through a granted `FileProvider` URI.
 - **In-app feedback:** optional; requires your own Firebase project (see below).
 
 > **Compatibility note:** Android and device manufacturers restrict different system interfaces. Some readings or controls may be unavailable, and successful application of a setting does not guarantee a specific FPS result. Avoid forcing sustained performance at the expense of device temperature or stability.

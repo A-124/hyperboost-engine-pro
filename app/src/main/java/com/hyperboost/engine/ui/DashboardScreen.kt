@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
@@ -82,7 +83,10 @@ fun DashboardScreen(
     val isWifiGamingActive by viewModel.isWifiGamingActive.collectAsState()
     val isVulkanActive by viewModel.isVulkanActive.collectAsState()
     val isSurfaceFlingerUncapped by viewModel.isSurfaceFlingerUncapped.collectAsState()
-    val isDownscaled720p by viewModel.isDownscaled720p.collectAsState()
+    val displayOverrideWidth by viewModel.displayOverrideWidth.collectAsState()
+    val isCachedFreezerActive by viewModel.isCachedFreezerActive.collectAsState()
+    val isAdaptiveBrightnessOff by viewModel.isAdaptiveBrightnessOff.collectAsState()
+    val isShowRefreshRateActive by viewModel.isShowRefreshRateActive.collectAsState()
     val selectedRefreshRate by viewModel.selectedRefreshRate.collectAsState()
     val supportedRefreshRates by viewModel.supportedRefreshRates.collectAsState()
     val selectedDns by viewModel.selectedDns.collectAsState()
@@ -99,6 +103,7 @@ fun DashboardScreen(
     var showCrosshairDialog by remember { mutableStateOf(false) }
     var showAdbGuideDialog by remember { mutableStateOf(false) }
     var showFeedbackDialog by remember { mutableStateOf(false) }
+    var configuringGame by remember { mutableStateOf<MainViewModel.GameProfile?>(null) }
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     val currentTab = DashTab.entries[selectedTab]
     val shizukuAuthorized = shizukuStatus == ShizukuManager.ShizukuStatus.AUTHORIZED
@@ -237,14 +242,24 @@ fun DashboardScreen(
                             onToggleVulkan = { viewModel.toggleVulkan() },
                             isSurfaceFlingerUncapped = isSurfaceFlingerUncapped,
                             onToggleSurfaceFlinger = { viewModel.toggleSurfaceFlingerLatency() },
-                            isDownscaled720p = isDownscaled720p,
-                            onToggleDownscale = { viewModel.toggleDownscale720p() },
                             selectedRefreshRate = selectedRefreshRate,
                             supportedRefreshRates = supportedRefreshRates,
                             onSelectRefreshRate = { viewModel.setRefreshRate(it) },
                             selectedDns = selectedDns,
                             onSelectDns = { viewModel.setPrivateDns(it) },
                             onTrimCaches = { viewModel.trimCaches(); AdManager.onFeatureUsed(adContext.findActivity()) }
+                        )
+                    }
+                    item(key = "gaming_tuning") {
+                        GamingTuningSection(
+                            displayOverrideWidth = displayOverrideWidth,
+                            onSelectResolution = { viewModel.setResolutionPreset(it) },
+                            isCachedFreezerActive = isCachedFreezerActive,
+                            onToggleFreezer = { viewModel.toggleCachedAppsFreezer() },
+                            isAdaptiveBrightnessOff = isAdaptiveBrightnessOff,
+                            onToggleAdaptiveBrightness = { viewModel.toggleAdaptiveBrightness() },
+                            isShowRefreshRateActive = isShowRefreshRateActive,
+                            onToggleShowRefreshRate = { viewModel.toggleShowRefreshRate() }
                         )
                     }
                     item(key = "advanced_tuning") {
@@ -311,7 +326,8 @@ fun DashboardScreen(
                             games = games,
                             onLaunchGame = { viewModel.launchGame(it) },
                             onToggleGameOpt = { viewModel.toggleGameOptimization(it) },
-                            onCompileShaders = { viewModel.compileGameShaders(it) }
+                            onCompileShaders = { viewModel.compileGameShaders(it) },
+                            onConfigureDisplay = { configuringGame = it }
                         )
                     }
                 }
@@ -339,6 +355,13 @@ fun DashboardScreen(
                     snackbarHostState.showSnackbar(if (sent) "Thanks, your feedback was sent." else "Couldn't send feedback. Check your connection and Firebase setup, then try again.")
                 }
             }
+        )
+    }
+    configuringGame?.let { game ->
+        GameDisplayDialog(
+            game = game,
+            onDismiss = { configuringGame = null },
+            onSelect = { width -> viewModel.setGameDisplayWidth(game.packageName, width) }
         )
     }
 }
@@ -514,8 +537,6 @@ fun EasyEnableOptimizationSection(
     onToggleVulkan: () -> Unit,
     isSurfaceFlingerUncapped: Boolean,
     onToggleSurfaceFlinger: () -> Unit,
-    isDownscaled720p: Boolean,
-    onToggleDownscale: () -> Unit,
     selectedRefreshRate: Int,
     supportedRefreshRates: List<Int>,
     onSelectRefreshRate: (Int) -> Unit,
@@ -586,16 +607,6 @@ fun EasyEnableOptimizationSection(
             isActive = isSurfaceFlingerUncapped,
             onToggle = onToggleSurfaceFlinger,
             tag = "toggle_surfaceflinger"
-        )
-
-        // 6. 720p Resolution Downscaler Card
-        EasyToggleCard(
-            title = "Downscale Display to 720p",
-            description = "Lowers GPU fill-rate load on supported devices",
-            icon = Icons.Default.AspectRatio,
-            isActive = isDownscaled720p,
-            onToggle = onToggleDownscale,
-            tag = "toggle_downscale_720p"
         )
 
         // Refresh Rate Selector Card
@@ -718,6 +729,123 @@ fun EasyEnableOptimizationSection(
                     )
                 }
             }
+        }
+    }
+}
+
+/** Resolution presets plus the extra gaming tuning toggles. */
+@Composable
+fun GamingTuningSection(
+    displayOverrideWidth: Int?,
+    onSelectResolution: (Int?) -> Unit,
+    isCachedFreezerActive: Boolean,
+    onToggleFreezer: () -> Unit,
+    isAdaptiveBrightnessOff: Boolean,
+    onToggleAdaptiveBrightness: () -> Unit,
+    isShowRefreshRateActive: Boolean,
+    onToggleShowRefreshRate: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            text = "MORE GAMING TUNING",
+            style = MaterialTheme.typography.labelMedium.copy(
+                letterSpacing = 1.2.sp,
+                fontWeight = FontWeight.SemiBold
+            ),
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        ResolutionPresetCard(selectedWidth = displayOverrideWidth, onSelect = onSelectResolution)
+
+        EasyToggleCard(
+            title = "Cached Apps Freezer",
+            description = "Freezes cached apps more aggressively (Android 11+)",
+            icon = Icons.Default.AcUnit,
+            isActive = isCachedFreezerActive,
+            onToggle = onToggleFreezer,
+            tag = "toggle_cached_freezer",
+            status = if (isCachedFreezerActive) "Verified on this device" else null
+        )
+
+        EasyToggleCard(
+            title = "Adaptive Brightness Off",
+            description = "Keeps the screen brightness fixed during a session",
+            icon = Icons.Default.WbSunny,
+            isActive = isAdaptiveBrightnessOff,
+            onToggle = onToggleAdaptiveBrightness,
+            tag = "toggle_adaptive_brightness",
+            status = if (isAdaptiveBrightnessOff) "Verified on this device" else null
+        )
+
+        EasyToggleCard(
+            title = "Show Refresh Rate",
+            description = "Adds Android's refresh-rate overlay",
+            icon = Icons.Default.Speed,
+            isActive = isShowRefreshRateActive,
+            onToggle = onToggleShowRefreshRate,
+            tag = "toggle_show_refresh_rate",
+            status = if (isShowRefreshRateActive) "Verified on this device" else null
+        )
+    }
+}
+
+@Composable
+private fun ResolutionPresetCard(selectedWidth: Int?, onSelect: (Int?) -> Unit) {
+    val options: List<Pair<Int?, String>> = listOf(
+        null to "Native",
+        1080 to "1080p",
+        900 to "900p",
+        720 to "720p"
+    )
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(Icons.Default.AspectRatio, contentDescription = null, tint = Color(0xFF00E5FF), modifier = Modifier.size(20.dp))
+                    Text("Resolution", fontWeight = FontWeight.Bold, color = Color.White)
+                }
+                Text(
+                    selectedWidth?.let { "${it}p" } ?: "Native",
+                    fontSize = 12.sp,
+                    color = NeonGreen,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                options.forEach { (width, label) ->
+                    FilterChip(
+                        selected = selectedWidth == width,
+                        onClick = { onSelect(width) },
+                        label = { Text(label) },
+                        modifier = Modifier.testTag("res_${width ?: "native"}")
+                    )
+                }
+            }
+            Text(
+                "Density scales with the resolution. An unconfirmed change reverts in ${MainViewModel.RESOLUTION_REVERT_SECONDS}s.",
+                fontSize = 10.sp,
+                color = Color(0xFF90A4AE)
+            )
         }
     }
 }
@@ -1325,7 +1453,8 @@ fun GameLauncherSection(
     games: List<MainViewModel.GameProfile>,
     onLaunchGame: (MainViewModel.GameProfile) -> Unit,
     onToggleGameOpt: (MainViewModel.GameProfile) -> Unit,
-    onCompileShaders: (MainViewModel.GameProfile) -> Unit
+    onCompileShaders: (MainViewModel.GameProfile) -> Unit,
+    onConfigureDisplay: (MainViewModel.GameProfile) -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -1376,7 +1505,8 @@ fun GameLauncherSection(
                         game = game,
                         onLaunch = { onLaunchGame(game) },
                         onToggleOpt = { onToggleGameOpt(game) },
-                        onCompile = { onCompileShaders(game) }
+                        onCompile = { onCompileShaders(game) },
+                        onConfigureDisplay = { onConfigureDisplay(game) }
                     )
                 }
             }
@@ -1389,8 +1519,10 @@ fun GameCard(
     game: MainViewModel.GameProfile,
     onLaunch: () -> Unit,
     onToggleOpt: () -> Unit,
-    onCompile: () -> Unit
+    onCompile: () -> Unit,
+    onConfigureDisplay: () -> Unit
 ) {
+    val displaySuffix = game.displayWidth?.let { " · ${it}p" } ?: ""
     Card(
         modifier = Modifier
             .width(170.dp)
@@ -1436,11 +1568,24 @@ fun GameCard(
                     }
                 }
 
-                Switch(
-                    checked = game.isOptimized,
-                    onCheckedChange = { onToggleOpt() },
-                    modifier = Modifier.size(36.dp)
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = onConfigureDisplay,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Tune,
+                            contentDescription = "Display profile",
+                            tint = Color(0xFF00E5FF),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                    Switch(
+                        checked = game.isOptimized,
+                        onCheckedChange = { onToggleOpt() },
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -1451,9 +1596,9 @@ fun GameCard(
                     color = Color.White
                 )
                 Text(
-                    text = if (game.isCompiled) "✓ AOT Shaders Compiled"
+                    text = (if (game.isCompiled) "✓ AOT Shaders Compiled"
                     else if (game.isOptimized) "Auto-Boost ${game.targetRefreshRate}Hz"
-                    else "Standard Profile",
+                    else "Standard Profile") + displaySuffix,
                     fontSize = 10.sp,
                     color = if (game.isCompiled) Color(0xFF00E676)
                     else if (game.isOptimized) Color(0xFF00E5FF)
@@ -1490,6 +1635,52 @@ fun GameCard(
             }
         }
     }
+}
+
+@Composable
+private fun GameDisplayDialog(
+    game: MainViewModel.GameProfile,
+    onDismiss: () -> Unit,
+    onSelect: (Int?) -> Unit
+) {
+    val options: List<Pair<Int?, String>> = listOf(
+        null to "Native",
+        1080 to "1080p",
+        900 to "900p",
+        720 to "720p"
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Display profile") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(game.appName, fontWeight = FontWeight.Bold)
+                Text(
+                    "Resolution applied when this game comes to the front. Your previous display is restored when you leave.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF90A4AE)
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    options.forEach { (width, label) ->
+                        FilterChip(
+                            selected = game.displayWidth == width,
+                            onClick = {
+                                onSelect(width)
+                                onDismiss()
+                            },
+                            label = { Text(label) }
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        }
+    )
 }
 
 @Composable

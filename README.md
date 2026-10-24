@@ -93,34 +93,6 @@ The app is designed to work without root. Shizuku provides elevated ADB-level ac
 
 **Download safety:** use the official release page above, check the version and release notes, and avoid unofficial APK mirrors.
 
-## Build from source
-
-Install JDK 21 and the Android SDK, then run from the repository root:
-
-```bash
-./gradlew testDebugUnitTest
-./gradlew assembleDebug
-```
-
-On Windows, use `gradlew.bat` instead of `./gradlew`. The debug APK is written to `app/build/outputs/apk/debug/`.
-
-A release build can be generated with `./gradlew assembleRelease`, but a debug-signed release APK is **not** suitable for distributing updates. Official releases are built by CI with the release keystore; see [RELEASING.md](RELEASING.md).
-
-### Optional: Firebase feedback
-
-The public source does not include a Firebase project configuration, so a fresh clone builds and runs normally and the feedback form reports that Firebase is not configured. To enable feedback in your own build, add your own `app/google-services.json` and deploy the included rules; see [FIREBASE_SETUP.md](FIREBASE_SETUP.md).
-
-## Repository layout
-
-| Path | Purpose |
-| --- | --- |
-| `app/` | Android app (Kotlin, Jetpack Compose) |
-| `index.html`, `assets/` | Official website served at [hyperboost-engine-pro.vercel.app](https://hyperboost-engine-pro.vercel.app) |
-| `update.json` | Update policy fetched by the in-app updater |
-| `.github/workflows/release.yml` | Tagged release build (tests, signed APK, SHA-256) |
-| `docs/` | Setup guides |
-| `CHANGELOG.md` | Release notes used by the release workflow |
-
 ## Updates
 
 The app reads the latest release from this repository (`releases/latest`) and the minimum supported version from `update.json`. Release assets must keep the names `HyperBoost-Engine-Pro-<version>.apk` and `SHA256SUMS.txt`.

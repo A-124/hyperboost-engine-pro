@@ -159,8 +159,27 @@ jobs:
         run: |
           set -euo pipefail
           keystore="$RUNNER_TEMP/release.jks"
-          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$keystore"
-          test -s "$keystore"
+          # Accept pasted secrets that contain whitespace, wrapping quotes or a data-URI prefix.
+          cleaned="${KEYSTORE_BASE64//[[:space:]]/}"
+          cleaned="${cleaned#\"}"; cleaned="${cleaned%\"}"
+          cleaned="${cleaned#\'}"; cleaned="${cleaned%\'}"
+          if [[ "$cleaned" == data:* ]]; then cleaned="${cleaned#*,}"; fi
+          echo "Encoded keystore length: ${#cleaned}"
+
+          if ! printf '%s' "$cleaned" | base64 --decode > "$keystore" 2>/tmp/keystore-decode.err; then
+            echo "::error::KEYSTORE_BASE64 is not valid base64: $(cat /tmp/keystore-decode.err)"
+            exit 1
+          fi
+          if ! test -s "$keystore"; then
+            echo "::error::KEYSTORE_BASE64 decoded to an empty file. Re-add it as base64 of the .jks file."
+            exit 1
+          fi
+
+          magic="$(od -An -tx1 -N4 "$keystore" | tr -d ' \n')"
+          echo "Decoded keystore size: $(stat -c%s "$keystore") bytes (magic $magic)"
+          if [[ "$magic" != "feedfeed" && "$magic" != 3082* ]]; then
+            echo "::warning::Decoded keystore does not look like JKS or PKCS12; apksigner will validate it."
+          fi
           echo "KEYSTORE_PATH=$keystore" >> "$GITHUB_ENV"
 
       - name: Set version code

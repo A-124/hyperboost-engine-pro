@@ -6,6 +6,8 @@
 <meta name="theme-color" content="#070b12">
 <meta name="description" content="Explore HyperBoost Engine Pro, a rootless Android gaming toolkit with Shizuku-backed tuning, live telemetry, FPS HUD, crosshair, game profiles, display controls and floating automation tools.">
 <link rel="canonical" href="https://hyperboost-engine-pro.vercel.app/">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/app-icon-192.png">
+<link rel="apple-touch-icon" href="assets/app-icon-192.png">
 <meta name="robots" content="index,follow,max-image-preview:large">
 <meta name="google-site-verification" content="AR-L1vTXQJ4vPcBeyrXV_iQELKKsfKX1P9jZ8PEdpbk">
 <meta property="og:type" content="website">
@@ -13,12 +15,16 @@
 <meta property="og:title" content="HyperBoost Engine Pro APK — Android Gaming Toolkit">
 <meta property="og:description" content="HyperBoost Engine Pro brings supported Android tuning, live performance telemetry, gaming overlays, per-game preferences and automation tools together.">
 <meta property="og:url" content="https://hyperboost-engine-pro.vercel.app/">
-<meta property="og:image" content="https://hyperboost-engine-pro.vercel.app/assets/hyperboost-banner.svg">
-<meta property="og:image:alt" content="HyperBoost Engine Pro Android gaming toolkit">
+<meta property="og:image" content="https://hyperboost-engine-pro.vercel.app/assets/hyperboost-og.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="HyperBoost Engine Pro — rootless Android gaming toolkit">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="HyperBoost Engine Pro APK — Android Gaming Toolkit">
 <meta name="twitter:description" content="Official HyperBoost Engine Pro website: Android tuning tools, FPS and frame-pacing HUD, telemetry, crosshair overlay, game profiles and automation.">
-<meta name="twitter:image" content="https://hyperboost-engine-pro.vercel.app/assets/hyperboost-banner.svg">
+<meta name="twitter:image" content="https://hyperboost-engine-pro.vercel.app/assets/hyperboost-og.jpg">
+<meta name="twitter:image:alt" content="HyperBoost Engine Pro — rootless Android gaming toolkit">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -29,6 +35,12 @@
   "description": "A rootless Android gaming toolkit with Shizuku-backed tuning, live telemetry, FPS HUD, crosshair, game profiles, display controls and floating tools. Feature availability varies by device.",
   "url": "https://hyperboost-engine-pro.vercel.app/",
   "downloadUrl": "https://github.com/A-124/hyperboost-engine-pro/releases/latest",
+  "softwareRequirements": "Android 8.0 (API 26) or later; Shizuku for supported tuning tools; overlay and accessibility permissions for optional features.",
+  "screenshot": [
+    "https://hyperboost-engine-pro.vercel.app/assets/Screenshot.jpg",
+    "https://hyperboost-engine-pro.vercel.app/assets/Screenshot2.jpg",
+    "https://hyperboost-engine-pro.vercel.app/assets/Screenshot3.jpg"
+  ],
   "author": {
     "@type": "Person",
     "name": "A-124",
@@ -77,9 +89,46 @@
 @media(max-width:650px){.hero:before{inset:2px -7px 0;border-radius:22px;mask-image:linear-gradient(180deg,#000,transparent 96%);opacity:.55}.hero h1{font-size:clamp(46px,13.5vw,66px);line-height:.98}.hero-copy{font-size:14px;line-height:1.8}.hero-actions{margin-top:25px;gap:9px}.hero-actions .btn{min-height:46px;padding-inline:14px}.hero-visual{min-height:385px}.visual-frame{padding:10px;border-radius:21px}.visual-frame:before{border-radius:21px}.visual-frame:hover{transform:rotate(.6deg)}.hero-visual .orb{width:280px}.float-card{padding:10px 12px;font-size:9px}.float-card strong{font-size:11px}.float-card.a{right:-2px;top:8px}.float-card.b{left:-2px;bottom:8px}}
 @media(prefers-reduced-motion:reduce){.visual-frame{transition:none}.visual-frame:hover{transform:none}}
 
+/* v1.7.0 web refresh: real device captures, generated hero art, lightbox. */
+.skip-link{position:fixed;left:14px;top:-70px;z-index:60;padding:11px 15px;border-radius:11px;background:var(--cyan);color:#041017;font-size:13px;font-weight:850;transition:top .2s}
+.skip-link:focus{top:14px}
+.hero-visual{position:relative;isolation:isolate;min-height:560px;display:grid;place-items:center}
+.hero-glow{position:absolute;z-index:0;inset:-46px -76px -34px -18px;background:url("assets/hyperboost-hero-glow.webp") right center/cover no-repeat;opacity:.66;filter:saturate(1.05);-webkit-mask-image:linear-gradient(90deg,transparent 2%,#000 40%,#000 94%,transparent);mask-image:linear-gradient(90deg,transparent 2%,#000 40%,#000 94%,transparent);pointer-events:none}
+.phone-stage{position:relative;z-index:1;width:min(100%,540px);height:560px}
+.phone{position:absolute;overflow:hidden;padding:8px;border:1px solid #8cecff38;border-radius:36px;background:#050a10;box-shadow:0 35px 90px #000a,inset 0 1px #ffffff14}
+.phone img{display:block;width:100%;height:100%;object-fit:cover;border-radius:28px;background:#080e17}
+.phone-front{width:252px;height:560px;right:38px;top:0;transform:rotate(1.8deg);z-index:2}
+.phone-back{width:202px;height:449px;left:34px;top:72px;transform:rotate(-6deg);opacity:.92;z-index:1}
+.hero-chip{position:absolute;z-index:3;display:flex;flex-direction:column;gap:2px;padding:10px 14px;border:1px solid #8cecff3d;border-radius:13px;background:#0b1521f2;backdrop-filter:blur(10px);box-shadow:0 14px 36px #0008;color:#dbe9f1;font-size:10px;font-weight:750;letter-spacing:.03em;white-space:nowrap}
+.hero-chip.row{flex-direction:row;align-items:center;gap:8px}
+.hero-chip b{font-size:12px;line-height:1.1;color:#fff;letter-spacing:.09em}
+.hero-chip b + span{color:#8fa8b9;font-size:9px;font-weight:600;letter-spacing:.02em}
+.chip-dot{width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 10px var(--mint);flex-shrink:0}
+.chip-a{top:34px;right:-2px}
+.chip-b{bottom:82px;right:-14px}
+.chip-c{bottom:28px;left:-8px}
+.shot-btn{display:block;width:100%;padding:0;border:0;border-radius:12px;background:none;cursor:zoom-in;overflow:hidden}
+.shot-btn:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+.shots.app-gallery{grid-template-columns:repeat(3,1fr);max-width:960px;margin-inline:auto}
+.shot img{aspect-ratio:6/13;object-position:top;height:auto}
+.lightbox{position:relative;width:fit-content;max-width:92vw;margin:auto;padding:0;border:0;background:transparent;color:var(--text)}
+.lightbox::backdrop{background:#02050ae6;backdrop-filter:blur(10px)}
+.lightbox img{display:block;width:auto;height:auto;max-width:min(92vw,460px);max-height:78vh;object-fit:contain;border-radius:18px;background:#080e17;box-shadow:0 30px 90px #000b;margin:0 auto}
+.lightbox p{margin:12px 2px 0;color:#b7c9d8;font-size:12px;text-align:center}
+.lightbox-close{position:absolute;top:-14px;right:-8px;width:42px;height:42px;border:1px solid #ffffff2b;border-radius:50%;background:#0d1824;color:#fff;font-size:24px;line-height:1;cursor:pointer;box-shadow:0 10px 30px #0009}
+.lightbox-close:hover{border-color:var(--cyan);color:var(--cyan)}
+.faq code{padding:1px 5px;border:1px solid #ffffff1c;border-radius:5px;background:#ffffff08;font-size:11px;color:#baf7ff}
+@media(max-width:1311px){.hero:before{right:0}.hero-glow{right:-18px}}
+@media(max-width:950px){.hero-visual{min-height:520px;margin-top:4px}.phone-stage{height:520px}.phone-front{width:232px;height:515px;right:62px}.phone-back{width:186px;height:413px;left:48px;top:68px}.chip-b{right:8px}.chip-c{left:8px}}
+@media(max-width:650px){.hero-visual{min-height:436px;margin-top:2px}.hero-glow{inset:-18px -8px -10px;opacity:.55}.phone-stage{height:436px}.phone{padding:6px;border-radius:29px}.phone img{border-radius:22px}.phone-front{width:192px;height:426px;right:calc(50% - 174px);top:2px}.phone-back{width:154px;height:342px;left:calc(50% - 180px);top:56px}.hero-chip{padding:7px 10px;border-radius:10px;font-size:9px}.hero-chip b{font-size:10px}.hero-chip b + span{font-size:8px}.chip-a{top:8px;right:0}.chip-b{bottom:44px;right:-2px}.chip-c{bottom:6px;left:0}.shots.app-gallery{grid-template-columns:repeat(3,1fr);gap:8px;max-width:none}.shots.app-gallery .shot{padding:7px}.shots.app-gallery .shot figcaption{font-size:11px;padding:10px 4px 4px}.shots.app-gallery .shot figcaption span{font-size:9px;line-height:1.4}}
+@media(max-width:500px){.shots.app-gallery{grid-template-columns:1fr 1fr;gap:10px}.shots.app-gallery .shot:first-child{grid-column:1/-1}.shots.app-gallery .shot figcaption{font-size:10px;padding:9px 4px 4px}.shots.app-gallery .shot:first-child figcaption{font-size:11px}.shots.app-gallery .shot figcaption span{font-size:9px}}
+@media(max-width:360px){.phone-front{width:172px;height:382px;right:4px}.phone-back{width:138px;height:307px;left:4px;top:50px}}
+@media(prefers-reduced-motion:reduce){.skip-link{transition:none}}
+
 </style>
 </head>
 <body>
+<a class="skip-link" href="#home">Skip to content</a>
 <header class="nav-shell">
   <div class="wrap nav">
     <a class="brand" href="#home" aria-label="HyperBoost Engine Pro home"><span class="logo">ϟ</span><span>HYPERBOOST <em>ENGINE PRO</em></span></a>
@@ -96,24 +145,25 @@
       <div class="hero-actions"><a class="btn btn-primary" href="https://github.com/A-124/hyperboost-engine-pro/releases/latest">↓ &nbsp; Download latest release</a><a class="btn btn-secondary" href="#screenshots">Explore the app &nbsp;↘</a></div>
       <div class="trustline"><span>No root intended</span><span>Shizuku-supported tools</span><span>Device-dependent features</span></div>
     </div>
-    <div class="hero-visual" aria-label="Preview of the real HyperBoost Engine Pro interface">
-      <div class="orb"></div>
-      <div class="float-card a"><b>● APP PREVIEW</b><strong>Made for your setup</strong></div>
-      <div class="visual-frame">
-        <div class="visual-top"><span>HYPERBOOST / INTERFACE</span><span class="window-dots"><i></i><i></i><i></i></span></div>
-        <div class="screens-main">
-          <div class="screen-tile app-mock"><div class="app-status"><span>9:41</span><span>▮ ▮ ▰</span></div><div class="app-brandline"><span class="app-mark">ϟ</span><div><b>HYPERBOOST</b><small>ENGINE PRO</small></div><span class="app-menu">⋮</span></div><div class="app-greeting">Gaming dashboard<small>Your setup at a glance</small></div><div class="app-performance"><div class="app-ring"><b>60</b><small>FPS</small></div><div><b>PERFORMANCE</b><small>Live overlay preview</small><span class="app-pill">● READY</span></div></div><div class="app-mini-grid"><div><span>PROFILE</span><b>Competitive</b></div><div><span>TOOLS</span><b>04 enabled*</b></div></div><div class="app-bottom"><span>⌂ Home</span><span>⌘ Tools</span><span>⚙ Settings</span></div></div>
-          <div class="screen-tile app-mock"><div class="app-status"><span>9:41</span><span>▮ ▮ ▰</span></div><div class="app-brandline"><span class="app-mark">ϟ</span><div><b>QUICK TOOLS</b><small>PERSONALIZE YOUR SETUP</small></div></div><div class="app-greeting">Game tools<small>Choose your experience</small></div><div class="app-tool"><span class="app-tool-icon">⌁</span><span><b>FPS HUD</b><small>On-screen performance</small></span><i>●</i></div><div class="app-tool"><span class="app-tool-icon">⊕</span><span><b>Crosshair overlay</b><small>Customize your reticle</small></span><i>●</i></div><div class="app-tool"><span class="app-tool-icon">▦</span><span><b>Game profiles</b><small>Per-game preferences</small></span><i>›</i></div><div class="app-tool"><span class="app-tool-icon">ϟ</span><span><b>System tools</b><small>Supported controls</small></span><i>›</i></div><div class="app-bottom"><span>⌂ Home</span><span>⌘ Tools</span><span>⚙ Settings</span></div></div>
+    <div class="hero-visual" aria-label="Real HyperBoost Engine Pro app screens">
+      <div class="hero-glow" aria-hidden="true"></div>
+      <div class="phone-stage">
+        <div class="phone phone-back">
+          <img src="assets/shots/tools-720.webp" srcset="assets/shots/tools-480.webp 480w, assets/shots/tools-720.webp 720w" sizes="(max-width: 650px) 42vw, 210px" width="720" height="1560" alt="HyperBoost Tools screen with rootless utilities, network ping and system customization" loading="eager" fetchpriority="high" decoding="async">
         </div>
-        <div class="visual-caption"><span>Concept app preview</span><span>HYPERBOOST PRO ↗</span></div>
+        <div class="phone phone-front">
+          <img src="assets/shots/boost-720.webp" srcset="assets/shots/boost-480.webp 480w, assets/shots/boost-720.webp 720w" sizes="(max-width: 650px) 52vw, 260px" width="720" height="1563" alt="HyperBoost Boost screen showing Master Boost, 12 modules and Shizuku status" loading="eager" fetchpriority="high" decoding="async">
+        </div>
+        <div class="hero-chip chip-a row"><span class="chip-dot"></span> Shizuku-backed</div>
+        <div class="hero-chip chip-b"><b>LIVE</b><span>FPS · frametime</span></div>
+        <div class="hero-chip chip-c"><b>12</b><span>boost modules</span></div>
       </div>
-      <div class="float-card b">✳ <b>PERSONALIZE</b><strong>Choose supported tools</strong></div>
     </div>
   </section>
-  <div class="stats"><div class="wrap stats-inner"><div class="stat-item"><strong>Gaming tools in one place</strong><span>Quick access to supported controls</span></div><div class="stat-item"><strong>Designed for Android</strong><span>Compatibility varies by device</span></div><div class="stat-item"><strong>Official project releases</strong><span>Source and downloads on GitHub</span></div></div></div>
+  <div class="stats"><div class="wrap stats-inner"><div class="stat-item"><strong>Android 8.0+</strong><span>API 26 or later · feature support varies</span></div><div class="stat-item"><strong>No root intended</strong><span>Shizuku-backed elevated access</span></div><div class="stat-item"><strong>Official GitHub releases</strong><span>APK + SHA-256 checksum</span></div></div></div>
   <section class="section" id="features"><div class="wrap"><div class="section-head"><div class="kicker">Your toolkit</div><h2>Less switching. More control.</h2><p>Explore tools built to help organize your Android gaming setup. What is available depends on your phone, Android version, permissions and Shizuku status.</p></div>
     <div class="feature-grid">
-      <article class="feature"><div class="feature-icon">ϟ</div><h3>Master Turbo</h3><p>Run supported tuning actions from one central gaming hub.</p></article>
+      <article class="feature"><div class="feature-icon">ϟ</div><h3>Master Boost</h3><p>Run supported tuning actions from one central gaming hub.</p></article>
       <article class="feature"><div class="feature-icon">⌁</div><h3>Live FPS & Frame Pacing</h3><p>View available frame-rate information for the foreground app on compatible Android builds.</p></article>
       <article class="feature"><div class="feature-icon">◉</div><h3>Device Telemetry</h3><p>Check available battery, memory, temperature and power readings while tuning your setup.</p></article>
       <article class="feature"><div class="feature-icon">⊕</div><h3>Crosshair Overlay</h3><p>Configure a floating crosshair for compatible games and devices.</p></article>
@@ -122,43 +172,83 @@
       <article class="feature"><div class="feature-icon">⌘</div><h3>Touch & Animation</h3><p>Explore supported pointer, touch, debounce and animation settings.</p></article>
       <article class="feature"><div class="feature-icon">◌</div><h3>Power & Background</h3><p>Manage supported battery, background-process and sustained-performance options.</p></article>
       <article class="feature"><div class="feature-icon">☾</div><h3>Game Do Not Disturb</h3><p>Access supported notification controls to keep interruptions down during a session.</p></article>
-      <article class="feature"><div class="feature-icon">⌁</div><h3>Auto Tap & Macros</h3><p>Use optional floating tap controls and accessibility-based automation where configured.</p></article>
+      <article class="feature"><div class="feature-icon">⌁</div><h3>Auto Tap</h3><p>Use optional floating tap and swipe controls. An accessibility service can speed up game detection where enabled.</p></article>
       <article class="feature"><div class="feature-icon">▧</div><h3>Storage Maintenance</h3><p>Run supported Android idle-maintenance tasks from the app.</p></article>
       <article class="feature"><div class="feature-icon">↶</div><h3>Restore Original Settings</h3><p>Restore saved values for supported settings changed through HyperBoost.</p></article>
       <article class="feature"><div class="feature-icon">⟳</div><h3>Update Assistance</h3><p>Check available app updates and follow the guided APK update flow when a compatible release is available.</p></article>
-      <article class="feature"><div class="feature-icon">✉</div><h3>In-App Feedback</h3><p>Send feedback from the app to help report issues and share suggestions.</p></article>
+      <article class="feature"><div class="feature-icon">✉</div><h3>In-App Feedback</h3><p>Send optional feedback from the app to report issues and share suggestions.</p></article>
+      <article class="feature"><div class="feature-icon">◎</div><h3>No Account Required</h3><p>Use the app without signing in. Feedback is anonymous and optional.</p></article>
+      <article class="feature"><div class="feature-icon">◐</div><h3>Optional Ad-Free Hour</h3><p>Watch one rewarded video to hide ads for an hour, where available.</p></article>
     </div>
   </div></section>
-  <section class="section" id="screenshots"><div class="wrap"><div class="section-head"><div class="kicker">Take a closer look</div><h2>See HyperBoost in action.</h2><p>Gaming-inspired visuals to match the HyperBoost look and feel.</p></div>
+  <section class="section" id="screenshots"><div class="wrap"><div class="section-head"><div class="kicker">Take a closer look</div><h2>Real screens from the app.</h2><p>Captured on Android — Boost controls, rootless tools and per-game profiles.</p></div>
     <div class="shots app-gallery">
-      <article class="shot"><div class="app-mock gallery-mock"><div class="app-status"><span>9:41</span><span>▮ ▮ ▰</span></div><div class="app-brandline"><span class="app-mark">ϟ</span><div><b>HYPERBOOST</b><small>ENGINE PRO</small></div><span class="app-menu">⋮</span></div><div class="app-greeting">Welcome back<small>Your gaming toolkit</small></div><div class="app-big-card"><span>MASTER TURBO</span><b>Optimize your setup</b><small>Run supported actions</small><button type="button" tabindex="-1">OPEN TOOL　↗</button></div><div class="app-mini-grid"><div><span>QUICK ACCESS</span><b>Gaming tools</b></div><div><span>STATUS</span><b class="app-green">Ready to explore</b></div></div><div class="app-bottom"><span>⌂ Home</span><span>⌘ Tools</span><span>⚙ Settings</span></div></div><figcaption>Dashboard preview<span>Conceptual app UI</span></figcaption></article>
-      <article class="shot"><div class="app-mock gallery-mock"><div class="app-status"><span>9:41</span><span>▮ ▮ ▰</span></div><div class="app-brandline"><span class="app-mark">ϟ</span><div><b>QUICK TOOLS</b><small>GAME ASSISTANCE</small></div></div><div class="app-greeting">Tools & overlays<small>Fast access to your options</small></div><div class="app-tool"><span class="app-tool-icon">⌁</span><span><b>FPS HUD</b><small>Performance overlay</small></span><i>●</i></div><div class="app-tool"><span class="app-tool-icon">⊕</span><span><b>Crosshair</b><small>Reticle appearance</small></span><i>●</i></div><div class="app-tool"><span class="app-tool-icon">▦</span><span><b>Game profiles</b><small>Preferences per game</small></span><i>›</i></div><div class="app-tool"><span class="app-tool-icon">ϟ</span><span><b>Turbo tools</b><small>Supported actions</small></span><i>›</i></div><div class="app-bottom"><span>⌂ Home</span><span>⌘ Tools</span><span>⚙ Settings</span></div></div><figcaption>Quick tools preview<span>Conceptual app UI</span></figcaption></article>
-      <article class="shot"><div class="app-mock gallery-mock"><div class="app-status"><span>9:41</span><span>▮ ▮ ▰</span></div><div class="app-brandline"><span class="app-mark">ϟ</span><div><b>DISPLAY TOOLS</b><small>DEVICE OPTIONS</small></div></div><div class="app-greeting">Display setup<small>Supported device controls</small></div><div class="app-setting"><span>Refresh rate</span><b>Device default　⌄</b></div><div class="app-setting"><span>Display density</span><b>System value　⌄</b></div><div class="app-setting"><span>Animation scale</span><b>1×　⌄</b></div><div class="app-info">ⓘ Available settings depend on your Android version and device permissions.</div><div class="app-bottom"><span>⌂ Home</span><span>⌘ Tools</span><span>⚙ Settings</span></div></div><figcaption>Settings preview<span>Conceptual app UI</span></figcaption></article>
-      <article class="shot"><div class="app-mock gallery-mock"><div class="app-status"><span>9:41</span><span>▮ ▮ ▰</span></div><div class="app-brandline"><span class="app-mark">ϟ</span><div><b>GAME PROFILES</b><small>PERSONAL SETTINGS</small></div></div><div class="app-greeting">Your profiles<small>Organize your preferences</small></div><div class="app-profile"><span class="app-profile-icon">◈</span><span><b>Competitive</b><small>Low-latency focus</small></span><i>›</i></div><div class="app-profile"><span class="app-profile-icon purple">✳</span><span><b>Balanced</b><small>Everyday gaming</small></span><i>›</i></div><div class="app-profile"><span class="app-profile-icon gold">✦</span><span><b>Battery saver</b><small>Efficiency-focused</small></span><i>›</i></div><div class="app-info">Profiles are illustrative examples for the website preview.</div><div class="app-bottom"><span>⌂ Home</span><span>⌘ Tools</span><span>⚙ Settings</span></div></div><figcaption>Profiles preview<span>Conceptual app UI</span></figcaption></article>
+      <article class="shot">
+        <button class="shot-btn" type="button" data-full="assets/shots/boost-720.webp" data-title="Boost — Master Boost, module toggles and Shizuku status">
+          <img src="assets/shots/boost-720.webp" srcset="assets/shots/boost-480.webp 480w, assets/shots/boost-720.webp 720w" sizes="(max-width: 650px) 30vw, 300px" width="720" height="1563" loading="lazy" decoding="async" alt="HyperBoost Boost tab with Master Boost card, module toggles and Shizuku status">
+        </button>
+        <figcaption>Boost<span>Master Boost and device status</span></figcaption>
+      </article>
+      <article class="shot">
+        <button class="shot-btn" type="button" data-full="assets/shots/tools-720.webp" data-title="Tools — rootless utilities, network ping and system customization">
+          <img src="assets/shots/tools-720.webp" srcset="assets/shots/tools-480.webp 480w, assets/shots/tools-720.webp 720w" sizes="(max-width: 650px) 30vw, 300px" width="720" height="1560" loading="lazy" decoding="async" alt="HyperBoost Tools tab with rootless utilities, network ping and system customization">
+        </button>
+        <figcaption>Tools<span>Rootless tools and system tuning</span></figcaption>
+      </article>
+      <article class="shot">
+        <button class="shot-btn" type="button" data-full="assets/shots/games-720.webp" data-title="Games — per-game profiles with auto-boost and AOT compilation">
+          <img src="assets/shots/games-720.webp" srcset="assets/shots/games-480.webp 480w, assets/shots/games-720.webp 720w" sizes="(max-width: 650px) 30vw, 300px" width="720" height="1557" loading="lazy" decoding="async" alt="HyperBoost Games tab with Mobile Legends and Roblox profiles, auto-boost and AOT compile buttons">
+        </button>
+        <figcaption>Games<span>Profiles, auto-boost and AOT</span></figcaption>
+      </article>
     </div>
-    <p class="shot-note">These are custom conceptual app previews, not screenshots of the current app. The actual interface and available features may differ.</p>
+    <p class="shot-note">Real captures from HyperBoost Engine Pro on Android. Layout and available controls vary by device and version.</p>
   </div></section>
   <section class="section" id="setup"><div class="wrap"><div class="section-head"><div class="kicker">Start here</div><h2>Get ready in three steps.</h2><p>Use the official release and follow setup instructions for the features you choose.</p></div>
-    <div class="howgrid"><article class="step"><div class="step-number">STEP 01 / DOWNLOAD</div><h3>Get the official build</h3><p>Open the GitHub releases page and download the APK attached to the release you want.</p></article><article class="step"><div class="step-number">STEP 02 / PREPARE</div><h3>Review permissions</h3><p>Grant only the permissions needed. Set up and authorize Shizuku for features that require it.</p></article><article class="step"><div class="step-number">STEP 03 / CUSTOMIZE</div><h3>Choose your tools</h3><p>Open the app, review supported options and test changes one at a time.</p></article></div>
-    <div class="requirements"><span class="requirement"><strong>Android 8.0+</strong> · feature-dependent</span><span class="requirement"><strong>Shizuku</strong> · required for some tools</span><span class="requirement"><strong>No root</strong> · intended design</span></div>
+    <div class="howgrid"><article class="step"><div class="step-number">STEP 01 / DOWNLOAD</div><h3>Get the official build</h3><p>Open the GitHub releases page, download the APK, and compare it with the attached SHA-256 checksum before installing.</p></article><article class="step"><div class="step-number">STEP 02 / PREPARE</div><h3>Review permissions</h3><p>Grant only the permissions needed. Set up and authorize Shizuku for features that require it.</p></article><article class="step"><div class="step-number">STEP 03 / CUSTOMIZE</div><h3>Choose your tools</h3><p>Open the app, review supported options and test changes one at a time.</p></article></div>
+    <div class="requirements"><span class="requirement"><strong>Android 8.0+</strong> · feature-dependent</span><span class="requirement"><strong>Shizuku</strong> · required for some tools</span><span class="requirement"><strong>No root</strong> · intended design</span><span class="requirement"><strong>No account</strong> · feedback optional</span></div>
   </div></section>
   <section class="section" id="faq"><div class="wrap"><div class="section-head"><div class="kicker">Good to know</div><h2>Frequently asked questions.</h2><p>Quick answers before you install.</p></div>
     <div class="faq">
       <details><summary>Does HyperBoost Engine Pro require root?</summary><p>It is designed as a rootless utility. Some features require Shizuku and the relevant Android permissions. Compatibility depends on your device and software.</p></details>
       <details><summary>How can HyperBoost help with my gaming setup?</summary><p>HyperBoost puts supported tuning controls, live performance information, display and refresh-rate options, per-game preferences, and floating gaming tools in one place. Use the options available on your device to personalize your setup and see how it behaves in your games.</p></details>
       <details><summary>Why do some features show as unavailable?</summary><p>Android manufacturers expose and restrict different system functions. Make sure required permissions and Shizuku are configured, then check whether your device supports the option.</p></details>
-      <details><summary>Where should I download the APK?</summary><p>Use the official <a href="https://github.com/A-124/hyperboost-engine-pro/releases/latest" style="color:var(--cyan);text-decoration:underline">GitHub latest release page</a>. Avoid unofficial mirrors and review release notes before installing.</p></details>
+      <details><summary>What data does the app handle?</summary><p>Profiles and settings stay on your device. If you choose to send feedback, it includes your message, app version, Android version and device model, stored through Firebase. No account or contact details are required. See the <a href="https://github.com/A-124/hyperboost-engine-pro/blob/main/PRIVACY_POLICY.md" style="color:var(--cyan);text-decoration:underline">privacy policy</a>.</p></details>
+      <details><summary>Where should I download the APK?</summary><p>Use the official <a href="https://github.com/A-124/hyperboost-engine-pro/releases/latest" style="color:var(--cyan);text-decoration:underline">GitHub latest release page</a>. Compare the APK with <code>SHA256SUMS.txt</code>, avoid unofficial mirrors, and review the release notes before installing.</p></details>
       <details><summary>Where can I report a bug?</summary><p>Open an issue on <a href="https://github.com/A-124/hyperboost-engine-pro/issues" style="color:var(--cyan);text-decoration:underline">the project repository</a> and include your app version, Android version, device model and steps to reproduce. Do not include passwords or private tokens.</p></details>
     </div>
   </div></section>
-  <section class="cta-section" id="download"><div class="wrap"><div class="cta"><div><div class="kicker">Your next session starts here</div><h2>Make your setup your own.</h2><p>Explore the project, check the latest release notes, and get the app from its official source.</p></div><div class="cta-actions"><a class="btn btn-primary" href="https://github.com/A-124/hyperboost-engine-pro/releases/latest">↓ &nbsp; Latest release</a><a class="btn btn-secondary" href="https://github.com/A-124/hyperboost-engine-pro">View source on GitHub ↗</a></div></div><p class="disclaimer">Feature availability and behavior depend on your Android version, device manufacturer, game, permissions and Shizuku status. Some controls need additional permissions. Monitor device temperature and stop using any option that behaves unexpectedly.</p></div></section>
+  <section class="cta-section" id="download"><div class="wrap"><div class="cta"><div><div class="kicker">Your next session starts here</div><h2>Make your setup your own.</h2><p>Explore the project, review the release notes, and get the official APK with its SHA-256 checksum.</p></div><div class="cta-actions"><a class="btn btn-primary" href="https://github.com/A-124/hyperboost-engine-pro/releases/latest">↓ &nbsp; Latest release</a><a class="btn btn-secondary" href="https://github.com/A-124/hyperboost-engine-pro">View source on GitHub ↗</a></div></div><p class="disclaimer">Feature availability and behavior depend on your Android version, device manufacturer, game, permissions and Shizuku status. Some controls need additional permissions. The app includes ads and optional anonymous feedback; see the privacy policy. Monitor device temperature and stop using any option that behaves unexpectedly.</p></div></section>
+  <dialog class="lightbox" id="lightbox" aria-label="Screenshot preview">
+    <button class="lightbox-close" id="lightboxClose" type="button" aria-label="Close preview">×</button>
+    <img id="lightboxImage" src="assets/shots/boost-720.webp" alt="HyperBoost screenshot preview" width="720" height="1563">
+    <p id="lightboxCaption"></p>
+  </dialog>
 </main>
-<footer><div class="wrap footer-row"><div><div class="footer-brand">ϟ HYPERBOOST ENGINE PRO</div><div>© 2026 · Android gaming tools, with device-dependent support.</div></div><div class="footer-links"><a href="https://github.com/A-124/hyperboost-engine-pro">GitHub</a><a href="https://github.com/A-124/hyperboost-engine-pro/releases/latest">Downloads</a><a href="https://github.com/A-124/hyperboost-engine-pro/issues">Report an issue</a><a class="backtop" href="#home">Back to top ↑</a></div></div></footer>
+<footer><div class="wrap footer-row"><div><div class="footer-brand">ϟ HYPERBOOST ENGINE PRO</div><div>© 2026 · Android gaming tools · Source and site under the MIT license.</div></div><div class="footer-links"><a href="https://github.com/A-124/hyperboost-engine-pro">GitHub</a><a href="https://github.com/A-124/hyperboost-engine-pro/releases/latest">Downloads</a><a href="https://github.com/A-124/hyperboost-engine-pro/blob/main/CHANGELOG.md">Changelog</a><a href="https://github.com/A-124/hyperboost-engine-pro/blob/main/PRIVACY_POLICY.md">Privacy</a><a href="https://github.com/A-124/hyperboost-engine-pro/blob/main/LICENSE">License</a><a href="https://github.com/A-124/hyperboost-engine-pro/issues">Report an issue</a><a class="backtop" href="#home">Back to top ↑</a></div></div></footer>
 <script>
 const toggle=document.getElementById('navToggle');
 const links=document.getElementById('navlinks');
+const closeNav=()=>{links.classList.remove('open');toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-label','Open navigation');toggle.textContent='☰';};
 toggle.addEventListener('click',()=>{const open=links.classList.toggle('open');toggle.setAttribute('aria-expanded',String(open));toggle.setAttribute('aria-label',open?'Close navigation':'Open navigation');toggle.textContent=open?'×':'☰';});
-links.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>{links.classList.remove('open');toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-label','Open navigation');toggle.textContent='☰';}));
+links.querySelectorAll('a').forEach(link=>link.addEventListener('click',closeNav));
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&links.classList.contains('open'))closeNav();});
+
+const lightbox=document.getElementById('lightbox');
+const lightboxImage=document.getElementById('lightboxImage');
+const lightboxCaption=document.getElementById('lightboxCaption');
+const lightboxClose=document.getElementById('lightboxClose');
+document.querySelectorAll('.shot-btn').forEach(button=>{
+  button.addEventListener('click',()=>{
+    const preview=button.querySelector('img');
+    lightboxImage.src=button.dataset.full;
+    lightboxImage.alt=preview?preview.alt:'';
+    lightboxCaption.textContent=button.dataset.title||'';
+    if(typeof lightbox.showModal==='function')lightbox.showModal();else lightbox.setAttribute('open','');
+  });
+});
+lightboxClose.addEventListener('click',()=>lightbox.close());
+lightbox.addEventListener('click',event=>{if(event.target===lightbox)lightbox.close();});
 </script>
 </body>
 </html>

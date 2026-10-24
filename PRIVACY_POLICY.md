@@ -1,28 +1,38 @@
 # Privacy Policy — HyperBoost Engine Pro
 
-**Last updated: October 21, 2026**
+**Last updated: October 24, 2026**
 
-HyperBoost Engine Pro ("the App") is an Android gaming utility maintained by A-124. This policy explains how information may be handled when you use the App.
+HyperBoost Engine Pro ("the App") is an Android gaming utility maintained by A-124. This policy explains what the App handles, why, and the choices you have.
 
 ## Information the App handles
 
-The App may access device and system information needed to provide its features, such as Android version, supported display or performance information, and settings you choose to view or change. Availability depends on your device and Android permissions.
+- **Device and system information** needed for the features you use, such as Android version, device model, display and performance information, and settings you choose to view or change. Availability depends on your device and permissions.
+- **Game profiles and preferences**, stored locally on your device so the App can remember your choices.
+- **Optional feedback**: the category, your message, app version, Android version, device model, submission time and a `new` status. Feedback also uses an anonymous Firebase user ID. No name, email address, account or contact details are requested.
+- **Advertising**: Unity Ads may process a device/advertising identifier, IP address and ad interaction data to serve and measure ads. The App requests the Android advertising ID permission.
 
-Game profiles, preferences, and settings may be stored locally on your device so the App can remember your choices. The App may use Android permissions and Shizuku for features you explicitly enable. Shizuku is a separate third-party tool; review its own privacy information.
+## How information is used
 
-## Collection and sharing
+- Local profiles and preferences are used only to provide the features you choose.
+- Feedback is used to diagnose issues and improve the App.
+- Ads support the App. Where available, watching a rewarded video hides ads for one hour.
 
-The developer does not operate a dedicated account service or backend for the App as described in this policy. Do not submit sensitive personal information through the App. The App's use of Android, Shizuku, your device manufacturer’s services, or any other third-party tools is subject to those providers' own policies and practices.
+## Sharing
 
-The App is not intended to sell personal information. Information may be disclosed if required by applicable law or to protect the security and integrity of the App.
+- **Google Firebase** provides anonymous sign-in and Firestore storage for feedback.
+- **Unity Ads** provides advertising.
+- **Shizuku** is a separate third-party app; its own privacy practices apply when you install and authorize it.
+- The developer does not sell personal information. Information may be disclosed if required by law or to protect the security and integrity of the App.
+
+## Retention and deletion
+
+- Local profiles and preferences can be removed by clearing the App's storage or uninstalling the App.
+- Feedback is retained until it has been reviewed and is no longer needed. To request deletion, open an issue in the project repository and include the approximate submission time; do not post private information.
+- Advertising data is retained according to Unity's policies.
 
 ## Permissions and control
 
-Android may request permissions or special access for particular features, including overlays or Shizuku authorization. Grant only the access needed for the features you want to use. You can revoke permissions in Android Settings; some features will stop working if the required access is removed.
-
-## Data retention and deletion
-
-Locally stored preferences and profiles can generally be removed by clearing the App's storage or uninstalling the App. Settings changed outside the App may need to be restored using the App's restore function or Android/device settings.
+Android may request permissions or special access for particular features, including Shizuku authorization, overlay access, accessibility, notifications and installing app updates. Grant only the access needed for the features you use. You can revoke permissions in Android Settings; some features will stop working if the required access is removed. You can reset or limit your advertising ID in Android Settings.
 
 ## Children's privacy
 
@@ -34,9 +44,10 @@ Use only official releases from the project repository. No method of storage or 
 
 ## Changes to this policy
 
-This policy may be updated when the App's features or data practices change. The latest version will be published at this URL.
+This policy may be updated when the App's features or data practices change. The latest version is published at this URL.
 
 ## Contact
 
-For privacy questions, open an issue in the project repository:
+For privacy questions or deletion requests, open an issue in the project repository:
+
 https://github.com/A-124/hyperboost-engine-pro/issues

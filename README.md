@@ -22,10 +22,9 @@ A gaming companion for Android that brings supported system tuning, live perform
 ## App screenshots
 
 <p align="center">
-  <img src="assets/Screenshot_2026-10-20-17-55-41-80_3700502abb509cb95ee88dc5de0a357f.jpg" alt="HyperBoost Engine Pro app screenshot 1" width="24%">
-  <img src="assets/Screenshot_2026-10-20-17-55-45-05_3700502abb509cb95ee88dc5de0a357f.jpg" alt="HyperBoost Engine Pro app screenshot 2" width="24%">
-  <img src="assets/Screenshot_2026-10-20-17-56-26-79_3700502abb509cb95ee88dc5de0a357f.jpg" alt="HyperBoost Engine Pro app screenshot 3" width="24%">
-  <img src="assets/Screenshot_2026-10-20-17-56-40-57_3700502abb509cb95ee88dc5de0a357f.jpg" alt="HyperBoost Engine Pro app screenshot 4" width="24%">
+  <img src="assets/Screenshot.jpg" alt="HyperBoost Boost tab with Master Boost and module toggles" width="32%">
+  <img src="assets/Screenshot2.jpg" alt="HyperBoost Tools tab with rootless utilities and system customization" width="32%">
+  <img src="assets/Screenshot3.jpg" alt="HyperBoost Games tab with per-game profiles and AOT compilation" width="32%">
 </p>
 
 ## About HyperBoost Engine Pro

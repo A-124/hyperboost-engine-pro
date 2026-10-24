@@ -1,6 +1,5 @@
 {
   "name": "HyperBoost Engine Pro",
-  "description": "Rootless Android performance engine, telemetry analyzer, and floating HUD overlay powered by Shizuku and accessibility services.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "description": "Official website for HyperBoost Engine Pro, a rootless Android gaming toolkit with Shizuku-backed tuning, live telemetry, FPS HUD, per-game profiles and floating tools.",
+  "requestFramePermissions": []
 }

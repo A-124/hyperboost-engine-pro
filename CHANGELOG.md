@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.6.0 - 2026-10-24
+
+### Reliability and compatibility
+- Gyro Check uses a compatible game-rate sensor request instead of requesting a zero-microsecond sampling period that can fail on Android devices.
+- Touch Boost no longer hard-codes an unsupported mouse pointer speed; optional touch tweaks are attempted only where Android permits them.
+- Tool failures use plain-language guidance instead of exposing raw Android exception stack traces.
+- In-app update-check failures now show a clear retry message instead of internal API/JSON errors.
+- Improved frametime telemetry so unavailable measurements are not replaced with synthetic FPS/jank values.
+- Thermal override requires both CPU and GPU temperature readings and fails safe when readings disappear or limits are exceeded.
+- Safer settings restoration avoids deleting a setting when no original snapshot could be read.
+
+### Release status
+- The v1.6.0 source changes passed the private GitHub Actions unit-test, lint, and debug-APK build workflow.
+- **Public APK release is pending production signing and installation/update verification.** The available private-test APK is debug-signed and is not being advertised as a production-ready public update.
+
+
 ## 1.5.0 - 2026-10-22
 
 ### Deep system customization

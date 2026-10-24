@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /feedback/{feedbackId} {
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly([
+          'category', 'message', 'appVersion', 'androidVersion',
+          'deviceModel', 'createdAt', 'status'
+        ])
+        && request.resource.data.category in ['Idea', 'Bug', 'Other']
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() <= 2000
+        && request.resource.data.appVersion is string
+        && request.resource.data.appVersion.size() <= 50
+        && request.resource.data.androidVersion is string
+        && request.resource.data.androidVersion.size() <= 50
+        && request.resource.data.deviceModel is string
+        && request.resource.data.deviceModel.size() <= 100
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.status == 'new';
+      allow read, update, delete: if false;
+    }
+  }
+}

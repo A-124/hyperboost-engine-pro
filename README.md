@@ -11,7 +11,7 @@ A gaming companion for Android that brings supported system tuning, live perform
 [![Latest Release](https://img.shields.io/github/v/release/A-124/hyperboost-engine-pro?style=for-the-badge&color=7c3aed)](https://github.com/A-124/hyperboost-engine-pro/releases/latest)
 [![Android](https://img.shields.io/badge/Android-8.0%2B-3ddc84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/)
 [![Shizuku](https://img.shields.io/badge/Works_with-Shizuku-007ACC?style=for-the-badge&logo=android&logoColor=white)](https://shizuku.rikka.app/)
-[![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
 [🌐 Official Website](https://hyperboost-engine-pro.vercel.app) · [⬇️ Latest APK](https://github.com/A-124/hyperboost-engine-pro/releases/latest) · [📋 All Releases](https://github.com/A-124/hyperboost-engine-pro/releases) · [🐛 Report a Bug](https://github.com/A-124/hyperboost-engine-pro/issues)
 
@@ -30,124 +30,109 @@ A gaming companion for Android that brings supported system tuning, live perform
 
 ## About HyperBoost Engine Pro
 
-**HyperBoost Engine Pro** is an Android gaming toolkit built to make supported device controls and gaming utilities easier to find and manage. It combines Shizuku-backed tuning, available performance telemetry, per-game preferences, floating tools, and restore support in one app.
+**HyperBoost Engine Pro** is an Android gaming toolkit that makes supported device controls and gaming utilities easier to find and manage. It combines Shizuku-backed tuning, available performance telemetry, per-game preferences, floating tools, and restore support in one app.
 
-The app is designed to work without requiring root. Shizuku provides elevated ADB-level access for supported operations, while overlays and automation may need their own Android permissions. What can be read or changed depends on the Android release, device manufacturer, game, permissions, and active Shizuku session.
+The app is designed to work without root. Shizuku provides elevated ADB-level access for supported operations, while overlays and automation may need their own Android permissions. What can be read or changed depends on the Android release, device manufacturer, game, permissions, and active Shizuku session.
 
-HyperBoost gives you tools to tune and monitor your setup. Actual performance changes vary by device and game, so use the controls that are available on your phone and keep an eye on temperature during long sessions.
+> **Important:** results depend on Android version, OEM restrictions, Shizuku authorization, and the device's thermal/power policies. A control being available in the UI does not guarantee that every device permits it. The app reports unsupported or rejected operations instead of promising universal FPS gains.
 
 ## Features
 
-### 🎮 Gaming hub and profiles
-- **Master Turbo:** One place to run supported tuning actions.
-- **Per-game profiles:** Keep game-related preferences organized.
-- **Refresh-rate selection:** Choose from refresh rates reported as supported by the device.
-- **Quick access to tools:** Open gaming controls and overlays from the dashboard.
+### Gaming hub and profiles
+- **Master Turbo:** one place to run supported tuning actions.
+- **Per-game profiles:** keep game-related preferences organized.
+- **Refresh-rate selection:** choose from rates reported as supported by the device.
+- **Quick access to tools:** open gaming controls and overlays from the dashboard.
 
-### 📊 Live telemetry and floating overlays
-- **Live FPS / frame pacing HUD:** Displays frame-rate information when Android exposes usable data for the foreground app.
-- **Performance telemetry:** Shows available device readings such as battery, memory, temperature, and power information.
-- **Crosshair overlay:** Configurable on-screen crosshair for compatible games and devices.
-- **Floating tools:** Optional overlay controls that stay accessible while using supported apps.
+### Live telemetry and floating overlays
+- **Live FPS / frame-pacing HUD:** displays frame-rate information when Android exposes usable data for the foreground app.
+- **Performance telemetry:** available battery, memory, temperature, and power readings.
+- **Crosshair overlay:** configurable on-screen crosshair for compatible games and devices.
+- **Floating tools:** optional overlay controls that stay accessible while using supported apps.
 
-### ⚙️ Display, input, and system tuning
-- **Display resolution scaling:** Offers supported resolution changes, including a lower-resolution option where the device allows it.
-- **Refresh-rate controls:** Applies supported refresh-rate settings and can restore the previous behavior.
-- **Touch and pointer settings:** Provides supported touch-related, pointer-speed, and debounce controls.
-- **Animation controls:** Adjusts supported window and transition animation settings.
-- **Graphics / rendering options:** Includes selected Android rendering and SurfaceFlinger-related controls where supported.
-- **Wi-Fi and network settings:** Offers selected network-related tuning options exposed by the device.
-- **Power and background controls:** Includes supported sustained-performance, battery-management, background-process, and game Do Not Disturb options.
-- **Storage maintenance:** Provides a supported maintenance action using Android's idle-maintenance tools.
+### Display, input, and system tuning
+- **Display resolution scaling:** supported resolution changes, including a lower-resolution option where the device allows it.
+- **Refresh-rate controls:** applies supported settings and can restore the previous behavior.
+- **Touch and pointer settings:** supported touch-related, pointer-speed, and debounce controls.
+- **Animation controls:** adjusts supported window and transition animation settings.
+- **Graphics / rendering options:** selected Android rendering and SurfaceFlinger-related controls where supported.
+- **Wi-Fi and network settings:** selected network-related tuning options exposed by the device.
+- **Power and background controls:** supported sustained-performance, battery-management, background-process, and game Do Not Disturb options.
+- **Storage maintenance:** a supported maintenance action using Android's idle-maintenance tools.
 
-### 🤖 Automation tools
-- **Auto Tap:** Floating tap controls for repeated input, where configured and permitted.
-- **Macro automation:** Accessibility-based automation tools for supported workflows.
-- **Permission-guided setup:** The app provides entry points to configure Shizuku, overlay, and accessibility access as needed.
+### Automation tools
+- **Auto Tap:** floating tap controls for repeated input, where configured and permitted.
+- **Macro automation:** accessibility-based automation tools for supported workflows.
+- **Permission-guided setup:** entry points to configure Shizuku, overlay, and accessibility access as needed.
 
-### ↩️ Restore, updates, and support
-- **Restore original settings:** The app snapshots original values for supported settings before changing them, then uses those snapshots when restoring.
-- **Read-back checks:** Selected operations are checked against the device's reported state where possible.
-- **Thermal-aware safeguards:** Some options include guards intended to reduce unsafe or unsuitable use.
-- **Status and error feedback:** Unsupported or rejected operations may be reported rather than silently treated as successful.
-- **Update flow:** Includes update-checking and a guided APK update/install flow when a compatible release is available.
-- **In-app feedback:** Send feedback through the app's feedback form; delivery depends on the configured Firebase services and network connection.
-- **Ad controls:** The app includes ad-related UI and an option to temporarily hide ads through the in-app rewarded flow, where available.
+### Restore, updates, and support
+- **Restore original settings:** original values are snapshotted before supported settings are changed and used when restoring.
+- **Read-back checks:** selected operations are checked against the device's reported state where possible.
+- **Thermal-aware safeguards:** some options include guards intended to reduce unsafe or unsuitable use.
+- **Status and error feedback:** unsupported or rejected operations are reported rather than silently treated as successful.
+- **Update flow:** includes update checking and a guided APK update/install flow when a compatible release is available.
+- **In-app feedback:** optional; requires your own Firebase project (see below).
 
 > **Compatibility note:** Android and device manufacturers restrict different system interfaces. Some readings or controls may be unavailable, and successful application of a setting does not guarantee a specific FPS result. Avoid forcing sustained performance at the expense of device temperature or stability.
 
 ## Requirements
 
 - **Android:** Android 8.0 (API 26) or later, with feature-specific compatibility.
-- **Shizuku:** Install and start [Shizuku](https://shizuku.rikka.app/) and authorize HyperBoost for Shizuku-backed operations.
-- **Overlay permission:** Needed for floating HUD and crosshair tools.
-- **Accessibility permission:** Needed for accessibility-based macro automation.
-- **Device compatibility:** Available controls depend on the Android build, manufacturer, and hardware.
+- **Shizuku:** install and start [Shizuku](https://shizuku.rikka.app/) and authorize HyperBoost for Shizuku-backed operations. See [docs/SHIZUKU_SETUP.md](docs/SHIZUKU_SETUP.md).
+- **Overlay permission:** needed for the floating HUD and crosshair tools.
+- **Accessibility permission:** needed for accessibility-based macro automation.
+- Grant only the permissions needed for the tools you choose to use.
 
-Grant only the permissions needed for the tools you choose to use.
-
-## Install and get started
+## Install
 
 1. Open the [latest official GitHub release](https://github.com/A-124/hyperboost-engine-pro/releases/latest).
-2. Download the APK attached to the release.
+2. Download `HyperBoost-Engine-Pro-<version>.apk` and check it against `SHA256SUMS.txt`.
 3. Install the APK. Android may ask you to allow installation from the browser or file manager you used.
-4. Start Shizuku and authorize HyperBoost if the selected feature requires it. Follow the official [Shizuku setup guide](https://shizuku.rikka.app/).
+4. Start Shizuku and authorize HyperBoost if the selected feature requires it.
 5. Grant overlay or accessibility access only when you want to use tools that need them.
-6. Open the app, review the available controls, and apply changes one at a time.
-7. Use **Restore My Original Settings** when you want to revert supported changes made by the app.
+6. Use **Restore My Original Settings** when you want to revert supported changes.
 
-**Download safety:** Use the official release page above, check the version and release notes, and avoid unofficial APK mirrors.
+**Download safety:** use the official release page above, check the version and release notes, and avoid unofficial APK mirrors.
 
-## Troubleshooting
+## Build from source
 
-- **Shizuku is disconnected:** Start Shizuku again and confirm HyperBoost is authorized.
-- **FPS or a metric is unavailable:** Some Android builds restrict access to frame statistics or device telemetry. An unavailable value is not the same as zero.
-- **A control is unavailable or rejected:** Check device compatibility, required permissions, and Shizuku status.
-- **A floating tool does not appear:** Review the app's overlay permission and the relevant in-app toggle.
-- **Macro automation does not run:** Confirm the accessibility service is enabled and review the automation configuration.
-- **A setting behaves unexpectedly:** Stop using that option and use restore support where available.
-- **Need help?** [Open an issue](https://github.com/A-124/hyperboost-engine-pro/issues) with your app version, Android version, device model, and steps to reproduce. Never post passwords, private tokens, signing keys, or other secrets.
+Install JDK 21 and the Android SDK, then run from the repository root:
 
-## FAQ
+```bash
+./gradlew testDebugUnitTest
+./gradlew assembleDebug
+```
 
-### Does HyperBoost Engine Pro require root?
+On Windows, use `gradlew.bat` instead of `./gradlew`. The debug APK is written to `app/build/outputs/apk/debug/`.
 
-It is designed as a rootless utility. Some operations use Shizuku, while overlays and accessibility-based tools require their respective Android permissions.
+A release build can be generated with `./gradlew assembleRelease`, but a debug-signed release APK is **not** suitable for distributing updates. Official releases are built by CI with the release keystore; see [RELEASING.md](RELEASING.md).
 
-### What can HyperBoost do for my gaming setup?
+### Optional: Firebase feedback
 
-HyperBoost brings supported tuning controls, live performance information, refresh-rate and display options, per-game preferences, and floating gaming tools into one place. Use the options available for your device to personalize your setup and monitor how it behaves in your games.
+The public source does not include a Firebase project configuration, so a fresh clone builds and runs normally and the feedback form reports that Firebase is not configured. To enable feedback in your own build, add your own `app/google-services.json` and deploy the included rules; see [FIREBASE_SETUP.md](FIREBASE_SETUP.md).
 
-### Will every feature work on every phone?
+## Repository layout
 
-Feature availability varies with Android version, manufacturer software, hardware, game, and permissions. The app may report a control or measurement as unavailable when the system does not expose it.
+| Path | Purpose |
+| --- | --- |
+| `app/` | Android app (Kotlin, Jetpack Compose) |
+| `index.html`, `assets/` | Official website served at [hyperboost-engine-pro.vercel.app](https://hyperboost-engine-pro.vercel.app) |
+| `update.json` | Update policy fetched by the in-app updater |
+| `.github/workflows/release.yml` | Tagged release build (tests, signed APK, SHA-256) |
+| `docs/` | Setup guides |
+| `CHANGELOG.md` | Release notes used by the release workflow |
 
-### Can I undo changes?
+## Updates
 
-The app snapshots original values for supported settings before changing them and provides **Restore My Original Settings** to help revert those changes. Restoration is limited to values the app was able to save and manage.
+The app reads the latest release from this repository (`releases/latest`) and the minimum supported version from `update.json`. Release assets must keep the names `HyperBoost-Engine-Pro-<version>.apk` and `SHA256SUMS.txt`.
 
-### Where can I download the newest version?
+## Safety and privacy
 
-Use the [latest release page](https://github.com/A-124/hyperboost-engine-pro/releases/latest). The website also links to the official project and release history.
-
-## Official links
-
-- **Website:** https://hyperboost-engine-pro.vercel.app
-- **Latest APK:** https://github.com/A-124/hyperboost-engine-pro/releases/latest
-- **Release history:** https://github.com/A-124/hyperboost-engine-pro/releases
-- **Issues and bug reports:** https://github.com/A-124/hyperboost-engine-pro/issues
-- **Shizuku documentation:** https://shizuku.rikka.app/
+- Review each tuning option before enabling it; device and vendor behavior varies.
+- Avoid disabling thermal protection during sustained gaming. Thermal override features remain guarded by automatic temperature limits.
+- Do not share signing keystores, passwords, access tokens, or `.env` files.
+- See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for dependency notices and [PRIVACY_POLICY.md](PRIVACY_POLICY.md) for the privacy policy.
 
 ## License
 
-HyperBoost Engine Pro is proprietary software developed and maintained by **A-124**. All rights are reserved. Refer to the repository's [LICENSE](LICENSE) file for the applicable terms. Do not redistribute or commercially reuse the software unless the license or maintainer explicitly permits it.
-
----
-
-<div align="center">
-
-**HyperBoost Engine Pro** · Your Android gaming setup, in your control
-
-Maintained by [A-124](https://github.com/A-124)
-
-</div>
+Released under the [MIT License](LICENSE). Third-party components remain subject to their respective licenses.

@@ -1,0 +1,40 @@
+<resources>
+    <string name="app_name">HyperBoost</string>
+    <string name="app_full_title">HyperBoost Engine Pro</string>
+    <string name="accessibility_service_name">HyperBoost Macro &amp; Profile Automation</string>
+    <string name="accessibility_service_description">Enables HyperBoost Engine to detect active foreground games and apply personalized performance profiles and macro gestures automatically.</string>
+    
+    <!-- Shizuku & System Status -->
+    <string name="status_shizuku_authorized">Shizuku Elevated Service Active</string>
+    <string name="status_shizuku_unauthorized">Shizuku Permission Required</string>
+    <string name="status_shizuku_dead">Shizuku Service Not Running</string>
+    <string name="shizuku_instruction_title">Rootless ADB Shell Authorization</string>
+    <string name="shizuku_instruction_desc">HyperBoost uses Shizuku to execute elevated system commands (display resolution, refresh rate, Vulkan forcing, cache trimming) safely without root access.</string>
+    <string name="btn_request_shizuku">Authorize Shizuku</string>
+    <string name="btn_refresh_shizuku">Re-check Connection</string>
+    
+    <!-- Actions -->
+    <string name="opt_fps_boost">Turbo FPS Boost</string>
+    <string name="opt_fps_boost_desc">Lock max refresh rate &amp; set high-priority performance governor</string>
+    <string name="opt_downscale">Downscale 720p</string>
+    <string name="opt_downscale_desc">Scale resolution down to 720p for sustained frame rates</string>
+    <string name="opt_reset_display">Reset Native Display</string>
+    <string name="opt_reset_display_desc">Restore native screen resolution and display density</string>
+    <string name="opt_clear_cache">Trim App Caches</string>
+    <string name="opt_clear_cache_desc">Execute pm trim-caches to free system RAM and storage buffer</string>
+    <string name="opt_vulkan">Force Vulkan Renderer</string>
+    <string name="opt_vulkan_desc">Route HWUI rendering engine through Vulkan pipeline</string>
+    <string name="opt_dns_cloudflare">Cloudflare Gaming DNS</string>
+    <string name="opt_dns_google">Google Low-Latency DNS</string>
+    <string name="opt_dns_off">Default System DNS</string>
+    
+    <!-- HUD Overlay -->
+    <string name="hud_toggle_title">Real-Time Performance HUD</string>
+    <string name="hud_toggle_desc">Floating non-intrusive overlay with FPS, frametime graphs, battery temp, and RAM</string>
+    <string name="hud_crosshair_title">Tactical Gaming Crosshair</string>
+    <string name="hud_crosshair_desc">Hardware-rendered floating screen center crosshair for shooters</string>
+    <string name="btn_enable_overlay">Grant Overlay Permission</string>
+    <string name="btn_enable_accessibility">Enable Automation Service</string>
+    <string name="overlay_notification_title">HyperBoost Telemetry Active</string>
+    <string name="overlay_notification_text">Monitoring live system metrics and rendering HUD overlay.</string>
+</resources>

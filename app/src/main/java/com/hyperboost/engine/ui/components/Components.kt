@@ -69,35 +69,6 @@ fun HbCard(
     }
 }
 
-/** Uppercase section label with an optional one-line hint underneath. */
-@Composable
-fun SectionHeader(
-    title: String,
-    modifier: Modifier = Modifier,
-    subtitle: String? = null
-) {
-    Column(
-        modifier = modifier.padding(top = 6.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp)
-    ) {
-        Text(
-            text = title.uppercase(),
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.4.sp
-            ),
-            color = MaterialTheme.colorScheme.primary
-        )
-        if (subtitle != null) {
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
 /** Small pill with a colored dot, e.g. "SHIZUKU" or "ENGAGED". */
 @Composable
 fun StatChip(

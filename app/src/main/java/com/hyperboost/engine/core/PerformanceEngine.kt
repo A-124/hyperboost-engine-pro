@@ -53,24 +53,6 @@ class PerformanceEngine(context: Context) {
         val overrideDensity: Int?
     )
 
-    /** What is actually active on the device right now (read back from the system). */
-    data class EngineState(
-        val zeroAnimations: Boolean = false,
-        val touchBoost: Boolean = false,
-        val wifiGaming: Boolean = false,
-        val vulkan: Boolean = false,
-        val surfaceFlingerLatch: Boolean = false,
-        val downscaled: Boolean = false,
-        val sustainedPerformance: Boolean = false,
-        val gameDnd: Boolean = false,
-        val phantomProtection: Boolean = false,
-        val batterySaverOff: Boolean = false,
-        val blurDisabled: Boolean = false,
-        val thermalOverride: Boolean = false,
-        val refreshRateHz: Int? = null,
-        val privateDns: String? = null
-    )
-
     // ------------------------------------------------------------------------------------------
     // Low-level helpers
     // ------------------------------------------------------------------------------------------
@@ -322,41 +304,77 @@ class PerformanceEngine(context: Context) {
     )
 
     /**
-     * Applies only optional touch-related tweaks that the system accepts.
-     * pointer_speed is a mouse setting, not touchscreen sensitivity, and OEMs vary its
-     * accepted range; do not write a hard-coded value that can fail on real devices.
+     * Enables the touch setting the engine can verify, then attempts the optional
+     * long-press/debounce writes only where the ROM accepts them.
+     * pointer_speed is a mouse setting, not touchscreen sensitivity, and is not written.
      */
-    suspend fun setTouchLatencyBoost(enable: Boolean): Result<String> =
-        if (enable) runAll(
-            "Touch latency options applied where supported. This does not change touchscreen hardware sensitivity.",
-            { soft { putSetting("system", "touch_prediction_status", "1") } },
-            { soft { putSetting("secure", "long_press_timeout", "250") } },
-            { soft { putProp("debug.touch.press.debounce", "0") } }
-        ) else runAll(
+    suspend fun setTouchLatencyBoost(enable: Boolean): Result<String> {
+        if (enable) {
+            val primary = putSetting("system", "touch_prediction_status", "1")
+            soft { putSetting("secure", "long_press_timeout", "250") }
+            soft { putProp("debug.touch.press.debounce", "0") }
+
+            return primary.fold(
+                onSuccess = {
+                    Result.success(
+                        "Touch prediction enabled and verified. Long-press and debounce options were applied where supported."
+                    )
+                },
+                onFailure = {
+                    Result.failure(
+                        RuntimeException(
+                            "This device did not accept touch prediction (${it.message}). Touch latency was not changed.",
+                            it
+                        )
+                    )
+                }
+            )
+        }
+        return runAll(
             "Touch options restored.",
             { restoreSetting("system", "pointer_speed") },
             { restoreSetting("system", "touch_prediction_status") },
             { restoreSetting("secure", "long_press_timeout") },
             { restoreProp("debug.touch.press.debounce") }
         )
+    }
 
     // ------------------------------------------------------------------------------------------
     // Network
     // ------------------------------------------------------------------------------------------
 
     /** Disable Wi-Fi power-save sleeping and turn on the framework's Wi-Fi low-latency mode. */
-    suspend fun setWifiGamingOptimization(enable: Boolean): Result<String> =
-        if (enable) runAll(
-            "Wi-Fi gaming low-latency mode enabled.",
-            { putSetting("global", "wifi_suspend_optimizations_enabled", "0") },
-            { soft { putSetting("global", "wifi_scan_always_enabled", "0") } },
-            {
-                // Android 10+; best effort, ignored where unsupported.
-                markApplied("wifill", true)
-                ShizukuShellExecutor.execute("cmd wifi force-low-latency-mode enabled").map { }
-                Result.success(Unit)
-            }
-        ) else runAll(
+    suspend fun setWifiGamingOptimization(enable: Boolean): Result<String> {
+        if (enable) {
+            val primary = putSetting("global", "wifi_suspend_optimizations_enabled", "0")
+            soft { putSetting("global", "wifi_scan_always_enabled", "0") }
+
+            // Android 10+; best effort. Do not claim it worked if the command was rejected.
+            val lowLatency = ShizukuShellExecutor.execute("cmd wifi force-low-latency-mode enabled")
+                .getOrNull()?.exitCode == 0
+            if (lowLatency) markApplied("wifill", true)
+
+            return primary.fold(
+                onSuccess = {
+                    Result.success(
+                        if (lowLatency) {
+                            "Wi-Fi low-latency mode enabled and verified."
+                        } else {
+                            "Wi-Fi power-save setting applied. The extra low-latency command is not supported on this ROM."
+                        }
+                    )
+                },
+                onFailure = {
+                    Result.failure(
+                        RuntimeException(
+                            "This device did not accept the Wi-Fi power-save setting (${it.message}).",
+                            it
+                        )
+                    )
+                }
+            )
+        }
+        return runAll(
             "Wi-Fi standard power saving restored.",
             { restoreSetting("global", "wifi_suspend_optimizations_enabled") },
             { restoreSetting("global", "wifi_scan_always_enabled") },
@@ -368,6 +386,7 @@ class PerformanceEngine(context: Context) {
                 Result.success(Unit)
             }
         )
+    }
 
     /** Private DNS hostname for lower-latency lookups (null/blank = turn Private DNS off). */
     suspend fun setPrivateDns(hostname: String?): Result<String> {
@@ -646,7 +665,7 @@ class PerformanceEngine(context: Context) {
         return if (enable) {
             exec(
                 "cmd thermalservice override-status 0",
-                "Thermal throttling override ON (temperature guard active).",
+                "Thermal throttling override requested (temperature guard active).",
                 "Thermal override is not supported on this device"
             ).onSuccess { markApplied("thermal", true) }
         } else {
@@ -655,6 +674,29 @@ class PerformanceEngine(context: Context) {
                 "Thermal throttling restored.",
                 "Failed to reset thermal override"
             ).onSuccess { markApplied("thermal", false) }
+        }
+    }
+
+    /**
+     * Best-effort thermal override state from the thermal service.
+     * Null means this ROM did not report enough information to verify it.
+     */
+    suspend fun readThermalOverride(): Boolean? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
+        val dump = readOut("dumpsys thermalservice") ?: return null
+        val text = dump.lineSequence()
+            .filter { it.contains("override", ignoreCase = true) }
+            .joinToString(" ")
+            .lowercase()
+        if (text.isBlank()) return null
+        val value = Regex(
+            """override(?:\s+status)?\s*[:=]?\s*(0|1|true|false|on|off|enabled|disabled|active)""",
+            RegexOption.IGNORE_CASE
+        ).find(text)?.groupValues?.getOrNull(1)?.lowercase() ?: return null
+        return when (value) {
+            "0", "false", "off", "disabled" -> false
+            "1", "true", "on", "enabled", "active" -> true
+            else -> null
         }
     }
 
@@ -910,7 +952,7 @@ class PerformanceEngine(context: Context) {
     suspend fun readState(): Result<EngineState> = withContext(Dispatchers.IO) {
         val script = listOf(
             "echo anim=\$(settings get global animator_duration_scale)",
-            "echo ptr=\$(settings get system pointer_speed)",
+            "echo touchpred=\$(settings get system touch_prediction_status)",
             "echo wifi=\$(settings get global wifi_suspend_optimizations_enabled)",
             "echo hwui=\$(getprop debug.hwui.renderer)",
             "echo sf=\$(getprop debug.sf.latch_unsignaled)",
@@ -924,37 +966,18 @@ class PerformanceEngine(context: Context) {
             "echo blur=\$(settings get global disable_window_blurs)"
         ).joinToString("; ")
 
-        ShizukuShellExecutor.execute(script).mapCatching { res ->
-            val m = res.stdout.lines().mapNotNull { line ->
-                val i = line.indexOf('=')
-                if (i < 0) null else line.substring(0, i) to line.substring(i + 1).trim()
-            }.toMap()
-
+        try {
+            val result = ShizukuShellExecutor.execute(script).getOrThrow()
             val display = getDisplayConfig().getOrNull()
-            EngineState(
-                zeroAnimations = m["anim"]?.toFloatOrNull() == 0f,
-                touchBoost = m["ptr"] == "7",
-                wifiGaming = m["wifi"] == "0",
-                vulkan = m["hwui"]?.startsWith("skiavk") == true,
-                surfaceFlingerLatch = m["sf"] == "1",
+            val state = EngineStateParser.parse(
+                stdout = result.stdout,
                 downscaled = display?.overrideWidth != null,
-                sustainedPerformance = m["sustained"]?.lowercase()?.let { v ->
-                    when {
-                        v.isBlank() -> wasApplied("sustained")
-                        v.contains("true") -> true
-                        v.contains("false") || v.contains("disabled") -> false
-                        v.contains("enabled") -> true
-                        else -> wasApplied("sustained")
-                    }
-                } ?: wasApplied("sustained"),
-                gameDnd = (m["zen"]?.toIntOrNull() ?: 0) != 0,
-                phantomProtection = m["phantom"] == "false",
-                batterySaverOff = m["adaptive"] == "0",
-                blurDisabled = m["blur"] == "1",
-                thermalOverride = wasApplied("thermal"),
-                refreshRateHz = m["minhz"]?.toFloatOrNull()?.toInt()?.takeIf { it > 0 },
-                privateDns = if (m["dnsmode"] == "hostname") m["dns"]?.takeIf { it.isNotBlank() && it != "null" } else null
+                applied = ::wasApplied
             )
+            val thermalVerified = if (state.thermalOverride) readThermalOverride() else null
+            Result.success(state.copy(thermalVerified = thermalVerified))
+        } catch (error: Exception) {
+            Result.failure(error)
         }
     }
 

@@ -539,11 +539,12 @@ fun EasyEnableOptimizationSection(
         // 1. Touch & Latency Overclock Card
         EasyToggleCard(
             title = "Touch & Debounce Overclock",
-            description = "Zero press debounce & hardware touch prediction for instant aim",
+            description = "Configures supported touch-prediction and debounce options; results vary by device",
             icon = Icons.Default.TouchApp,
             isActive = isTouchBoostActive,
             onToggle = onToggleTouch,
-            tag = "toggle_touch_boost"
+            tag = "toggle_touch_boost",
+            status = if (isTouchBoostActive) "Verified on this device" else null
         )
 
         // 2. Zero Window Animations Card
@@ -559,11 +560,12 @@ fun EasyEnableOptimizationSection(
         // 3. Wi-Fi Gaming Low-Latency Card
         EasyToggleCard(
             title = "Wi-Fi Low-Latency Lock",
-            description = "Disables power-saving Wi-Fi sleep intervals to eradicate ping spikes",
+            description = "Reduces power-save Wi-Fi stalls where the device supports it",
             icon = Icons.Default.Wifi,
             isActive = isWifiGamingActive,
             onToggle = onToggleWifi,
-            tag = "toggle_wifi_gaming"
+            tag = "toggle_wifi_gaming",
+            status = if (isWifiGamingActive) "Verified on this device" else null
         )
 
         // 4. Force Vulkan GPU Engine Card
@@ -589,7 +591,7 @@ fun EasyEnableOptimizationSection(
         // 6. 720p Resolution Downscaler Card
         EasyToggleCard(
             title = "Downscale Display to 720p",
-            description = "Lowers pixel fill rate to sustain stable 120 FPS in heavy 3D games",
+            description = "Lowers GPU fill-rate load on supported devices",
             icon = Icons.Default.AspectRatio,
             isActive = isDownscaled720p,
             onToggle = onToggleDownscale,
@@ -709,7 +711,7 @@ fun EasyEnableOptimizationSection(
                         Text("Trim Caches", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                     Text(
-                        text = "Purge 5GB RAM Cache",
+                        text = "Trim app caches (up to 5 GB)",
                         fontSize = 11.sp,
                         color = Color(0xFF8B9CB3),
                         maxLines = 1
@@ -771,7 +773,7 @@ fun AdvancedTuningSection(
 
         EasyToggleCard(
             title = "No Battery Throttling",
-            description = "Turns off Battery Saver & Adaptive Battery so the OS stops limiting performance",
+            description = "Turns off Battery Saver and Adaptive Battery; device behavior varies",
             icon = Icons.Default.BatteryChargingFull,
             isActive = isBatteryThrottleOff,
             onToggle = onToggleBattery,
@@ -862,7 +864,8 @@ fun EasyToggleCard(
     icon: ImageVector,
     isActive: Boolean,
     onToggle: () -> Unit,
-    tag: String
+    tag: String,
+    status: String? = null
 ) {
     Card(
         modifier = Modifier
@@ -915,6 +918,15 @@ fun EasyToggleCard(
                         color = Color(0xFF90A4AE),
                         fontSize = 11.sp
                     )
+                    if (status != null) {
+                        Text(
+                            text = status,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (isActive) NeonGreen else Color(0xFF90A4AE),
+                            fontSize = 10.sp,
+                            modifier = Modifier.padding(top = 3.dp)
+                        )
+                    }
                 }
             }
 
@@ -1300,7 +1312,7 @@ fun HudControlsCard(
                                 .clip(CircleShape)
                                 .background(if (isAccessibilityActive) Color(0xFF00E676) else Color(0xFFFF5252))
                         )
-                        Text("Macro Service", fontSize = 12.sp)
+                        Text("Game Detection", fontSize = 12.sp)
                     }
                 }
             }

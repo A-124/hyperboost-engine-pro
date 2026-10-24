@@ -28,6 +28,7 @@ import com.hyperboost.engine.services.AutoTapService
 fun ExtraTweaksSection(viewModel: MainViewModel) {
     val isBlurDisabled by viewModel.isBlurDisabled.collectAsState()
     val isThermalOn by viewModel.isThermalOverrideActive.collectAsState()
+    val thermalVerified by viewModel.thermalVerified.collectAsState()
     val pendingSeconds by viewModel.pendingRevertSeconds.collectAsState()
     val isAutoTapRunning by viewModel.isAutoTapRunning.collectAsState()
 
@@ -62,7 +63,13 @@ fun ExtraTweaksSection(viewModel: MainViewModel) {
             icon = Icons.Default.Thermostat,
             isActive = isThermalOn,
             onToggle = { viewModel.toggleThermalOverride() },
-            tag = "toggle_thermal_override"
+            tag = "toggle_thermal_override",
+            status = when {
+                thermalVerified == false -> "Not active — the thermal service rejected the override"
+                !isThermalOn -> null
+                thermalVerified == true -> "Verified active on this device"
+                else -> "Requested — this ROM does not report override state"
+            }
         )
 
         Row(

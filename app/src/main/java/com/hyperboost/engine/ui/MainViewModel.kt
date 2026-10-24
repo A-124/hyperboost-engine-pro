@@ -11,6 +11,7 @@ import android.provider.Settings
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.hyperboost.engine.core.EngineState
 import com.hyperboost.engine.core.PerformanceEngine
 import com.hyperboost.engine.core.ShizukuManager
 import com.hyperboost.engine.services.MacroAutomationService
@@ -159,6 +160,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _isThermalOverrideActive = MutableStateFlow(false)
     val isThermalOverrideActive: StateFlow<Boolean> = _isThermalOverrideActive.asStateFlow()
+
+    /** null = not reported by this ROM. */
+    private val _thermalVerified = MutableStateFlow<Boolean?>(null)
+    val thermalVerified: StateFlow<Boolean?> = _thermalVerified.asStateFlow()
 
     /** Seconds left to confirm a display-size change, or null when nothing is waiting for confirmation. */
     private val _pendingRevertSeconds = MutableStateFlow<Int?>(null)
@@ -316,7 +321,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private fun applyEngineState(s: PerformanceEngine.EngineState) {
+    private suspend fun reconcileEngineState() {
+        performanceEngine.readState().onSuccess { applyEngineState(it) }
+    }
+
+    private fun applyEngineState(s: EngineState) {
         _isZeroAnimationActive.value = s.zeroAnimations
         _isTouchBoostActive.value = s.touchBoost
         _isWifiGamingActive.value = s.wifiGaming
@@ -328,8 +337,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _isPhantomProtectionActive.value = s.phantomProtection
         _isBatteryThrottleOff.value = s.batterySaverOff
         _isBlurDisabled.value = s.blurDisabled
-        // The override only counts as active while its guard is running in this session.
-        _isThermalOverrideActive.value = s.thermalOverride && thermalGuardJob != null
+        // The override only counts as active while its guard is running in this session, and it is
+        // not shown as active when the ROM explicitly reports that the override did not take effect.
+        _isThermalOverrideActive.value =
+            s.thermalOverride && thermalGuardJob != null && s.thermalVerified != false
+        _thermalVerified.value = s.thermalVerified
         _selectedRefreshRate.value = s.refreshRateHz ?: _telemetryState.value.refreshRateHz
         _selectedDns.value = s.privateDns
         _isMasterTurboActive.value =
@@ -504,6 +516,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _isBatteryThrottleOff.value = false
             _isBlurDisabled.value = false
             _isThermalOverrideActive.value = false
+            _thermalVerified.value = null
         }
         _isMasterTurboActive.value = false
         refreshAdvanced()
@@ -528,8 +541,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val res = apply(next).getOrThrow()
                 flow.value = next
                 _userFeedbackMessage.emit(res)
+                reconcileEngineState()
             } catch (e: Exception) {
                 _userFeedbackMessage.emit(friendlyFeatureError(label))
+                reconcileEngineState()
             } finally {
                 _isBusy.value = false
             }
@@ -589,14 +604,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     val res = performanceEngine.setThermalOverride(true).getOrThrow()
                     _isThermalOverrideActive.value = true
                     startThermalGuard()
+                    reconcileEngineState()
+                    val verification = when (_thermalVerified.value) {
+                        true -> "Override verified active."
+                        false -> "The thermal service still reports throttling enabled; the override did not take effect."
+                        null -> "This ROM does not report override state; the temperature guard remains active."
+                    }
                     _userFeedbackMessage.emit(
-                        "$res Auto-off at ${THERMAL_CPU_LIMIT_C.toInt()}°C CPU / ${THERMAL_GPU_LIMIT_C.toInt()}°C GPU."
+                        "$res $verification Auto-off at ${THERMAL_CPU_LIMIT_C.toInt()}°C CPU / ${THERMAL_GPU_LIMIT_C.toInt()}°C GPU."
                     )
                 } else {
                     thermalGuardJob?.cancel()
                     thermalGuardJob = null
                     val res = performanceEngine.setThermalOverride(false).getOrThrow()
                     _isThermalOverrideActive.value = false
+                    _thermalVerified.value = null
                     _userFeedbackMessage.emit(res)
                 }
             } catch (e: Exception) {
@@ -624,6 +646,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val readingsUnavailable = cpu == null || gpu == null
                 if ((hot || readingsUnavailable) && performanceEngine.setThermalOverride(false).isSuccess) {
                     _isThermalOverrideActive.value = false
+                    _thermalVerified.value = null
                     _userFeedbackMessage.emit(
                         if (readingsUnavailable) {
                             "Temperature readings were lost. Thermal override turned off as a safety precaution."
@@ -782,8 +805,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val res = performanceEngine.setTouchLatencyBoost(next).getOrThrow()
                 _isTouchBoostActive.value = next
                 _userFeedbackMessage.emit(res)
+                reconcileEngineState()
             } catch (e: Exception) {
                 _userFeedbackMessage.emit("Touch boost error: ${e.message}")
+                reconcileEngineState()
             } finally {
                 _isBusy.value = false
             }
@@ -799,8 +824,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 else performanceEngine.restoreWindowAnimationScale().getOrThrow()
                 _isZeroAnimationActive.value = next
                 _userFeedbackMessage.emit(res)
+                reconcileEngineState()
             } catch (e: Exception) {
                 _userFeedbackMessage.emit("Animation error: ${e.message}")
+                reconcileEngineState()
             } finally {
                 _isBusy.value = false
             }
@@ -815,8 +842,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val res = performanceEngine.setWifiGamingOptimization(next).getOrThrow()
                 _isWifiGamingActive.value = next
                 _userFeedbackMessage.emit(res)
+                reconcileEngineState()
             } catch (e: Exception) {
                 _userFeedbackMessage.emit("Wi-Fi boost error: ${e.message}")
+                reconcileEngineState()
             } finally {
                 _isBusy.value = false
             }
@@ -831,8 +860,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val res = performanceEngine.forceVulkanRenderer(next).getOrThrow()
                 _isVulkanActive.value = next
                 _userFeedbackMessage.emit(res)
+                reconcileEngineState()
             } catch (e: Exception) {
                 _userFeedbackMessage.emit("Vulkan error: ${e.message}")
+                reconcileEngineState()
             } finally {
                 _isBusy.value = false
             }
@@ -847,8 +878,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val res = performanceEngine.setSurfaceFlingerLowLatency(next).getOrThrow()
                 _isSurfaceFlingerUncapped.value = next
                 _userFeedbackMessage.emit(res)
+                reconcileEngineState()
             } catch (e: Exception) {
                 _userFeedbackMessage.emit("SurfaceFlinger error: ${e.message}")
+                reconcileEngineState()
             } finally {
                 _isBusy.value = false
             }
@@ -882,6 +915,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     _isDownscaled720p.value = false
                     _userFeedbackMessage.emit("Native display resolution restored.")
                 }
+                reconcileEngineState()
             } catch (e: Exception) {
                 _userFeedbackMessage.emit("Display scale error: ${e.message}")
                 syncStateFromDevice()
@@ -899,6 +933,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val res = performanceEngine.lockRefreshRate(hz.toFloat()).getOrThrow()
                 _selectedRefreshRate.value = hz
                 _userFeedbackMessage.emit(res)
+                reconcileEngineState()
             } catch (e: Exception) {
                 _userFeedbackMessage.emit("Refresh rate error: ${e.message}")
             } finally {
@@ -914,6 +949,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val res = performanceEngine.setPrivateDns(hostname).getOrThrow()
                 _selectedDns.value = hostname
                 _userFeedbackMessage.emit(res)
+                reconcileEngineState()
             } catch (e: Exception) {
                 _userFeedbackMessage.emit("DNS error: ${e.message}")
             } finally {
@@ -935,7 +971,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     else it
                 }
                 _installedGames.value = updated
-                _userFeedbackMessage.emit("Compiled ${game.appName}: In-game stutter eradicated!")
+                gamePrefs.edit().putBoolean("compiled/${game.packageName}", true).apply()
+                _userFeedbackMessage.emit("AOT compilation completed for ${game.appName}.")
             } catch (e: Exception) {
                 _userFeedbackMessage.emit("Compilation error: ${e.message}")
             } finally {
@@ -1081,7 +1118,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         targetRefreshRate = target,
                         forceVulkan = true,
                         // Remembered per game; new games default to auto-boost on.
-                        isOptimized = gamePrefs.getBoolean("opt/${app.packageName}", true)
+                        isOptimized = gamePrefs.getBoolean("opt/${app.packageName}", true),
+                        isCompiled = gamePrefs.getBoolean("compiled/${app.packageName}", false)
                     )
                 }
                 .sortedBy { it.appName.lowercase() }
@@ -1111,6 +1149,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val res = apply(next).getOrThrow()
                 _advancedActive.update { if (next) it + name else it - name }
                 _userFeedbackMessage.emit(res)
+                reconcileEngineState()
             } catch (e: Exception) {
                 _userFeedbackMessage.emit("$label error: ${e.message}")
             } finally {
@@ -1128,6 +1167,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _levels.update { it + (key to index) }
                 _advancedActive.update { if (index == 0) it - key else it + key }
                 _userFeedbackMessage.emit(res)
+                reconcileEngineState()
             } catch (e: Exception) {
                 _userFeedbackMessage.emit("$label error: ${e.message}")
             } finally {

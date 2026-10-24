@@ -28,6 +28,7 @@ import com.hyperboost.engine.update.UpdateManager
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import com.hyperboost.engine.ads.AdManager
 import com.hyperboost.engine.ui.DashboardScreen
 import com.hyperboost.engine.ui.MainViewModel
@@ -240,25 +241,29 @@ class MainActivity : ComponentActivity() {
         when (compatibility) {
             is CompatibilityResult.Incompatible -> {
                 // If signatures differ, Android will reject the install with "Package conflicts with an existing package".
-                // Safely export the APK to Downloads and offer guided clean installation.
-                val savedApk = UpdateManager.copyApkToDownloads(this, apkFile, update.version)
-                val targetLocation = savedApk?.absolutePath ?: "Downloads folder"
+                val savedApk = UpdateManager.saveApkToDownloads(this, apkFile, update.version)
+                val location = savedApk?.label
+                val message = buildString {
+                    append("The update cannot overwrite the current app directly because it was signed with a different certificate ")
+                    append("(common when updating between local/debug builds and official release builds).\n\n")
+                    if (location != null) {
+                        append("The update was saved to:\n$location\n\n")
+                        append("To install:\n1. Uninstall the current HyperBoost app.\n2. Open Downloads and tap the APK.\n\n")
+                    } else {
+                        append("The update is ready in app storage.\n\n")
+                        append("To install:\n1. Uninstall the current HyperBoost app.\n2. Tap Share APK and save it somewhere you can open.\n\n")
+                    }
+                    append("Sharing the APK does not install it.")
+                }
 
                 AlertDialog.Builder(this)
                     .setTitle("Package Conflict Detected")
-                    .setMessage(
-                        "The update cannot overwrite the current app directly because it was signed with a different certificate " +
-                        "(common when updating between local/debug builds and official release builds).\n\n" +
-                        "The update has been safely saved to:\n$targetLocation\n\n" +
-                        "To install this update:\n" +
-                        "1. Uninstall the currently installed HyperBoost app.\n" +
-                        "2. Open your Downloads folder and tap the APK to install."
-                    )
+                    .setMessage(message)
                     .setPositiveButton("Uninstall current app") { _, _ ->
                         startActivity(Intent(Intent.ACTION_DELETE, Uri.parse("package:$packageName")))
                     }
-                    .setNeutralButton("Try install anyway") { _, _ ->
-                        UpdateManager.launchInstallIntent(this, apkFile)
+                    .setNeutralButton("Share APK") { _, _ ->
+                        shareApk(apkFile, update.version)
                     }
                     .setNegativeButton("Cancel", null)
                     .show()
@@ -266,6 +271,24 @@ class MainActivity : ComponentActivity() {
             else -> {
                 UpdateManager.launchInstallIntent(this, apkFile)
             }
+        }
+    }
+
+    private fun shareApk(apk: File, version: String) {
+        try {
+            val uri = FileProvider.getUriForFile(this, "$packageName.updates", apk)
+            val send = Intent(Intent.ACTION_SEND).apply {
+                type = "application/vnd.android.package-archive"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            startActivity(Intent.createChooser(send, "Share HyperBoost $version APK"))
+        } catch (e: Exception) {
+            AlertDialog.Builder(this)
+                .setTitle("Could not share the APK")
+                .setMessage(e.message ?: "The update is in app storage.")
+                .setPositiveButton("OK", null)
+                .show()
         }
     }
 

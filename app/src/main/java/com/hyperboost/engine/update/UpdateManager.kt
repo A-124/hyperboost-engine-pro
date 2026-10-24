@@ -1,11 +1,14 @@
 package com.hyperboost.engine.update
 
 import android.app.PendingIntent
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
+import androidx.annotation.RequiresApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -28,6 +31,9 @@ sealed class CompatibilityResult {
     data class Incompatible(val installedCertSha256: String, val updateCertSha256: String) : CompatibilityResult()
     data object CannotVerify : CompatibilityResult()
 }
+
+/** A saved update APK, with a label suitable for the install dialog. */
+data class SavedApk(val label: String, val apk: File)
 
 object UpdateManager {
     private const val RELEASE_API = "https://api.github.com/repos/A-124/hyperboost-engine-pro/releases/latest"
@@ -250,19 +256,61 @@ object UpdateManager {
     }
 
     /**
-     * Copies the APK to the public Downloads folder so it persists even if the user
-     * uninstalls the currently installed build to resolve a signature conflict.
+     * Saves the APK somewhere the user can find it after uninstalling the current build.
+     * The cached APK is still returned for the share fallback.
      */
-    fun copyApkToDownloads(context: Context, apk: File, version: String): File? {
-        return try {
-            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            downloadsDir.mkdirs()
-            val target = File(downloadsDir, "HyperBoost-Engine-Pro-$version.apk")
-            apk.copyTo(target, overwrite = true)
-            target
-        } catch (_: Exception) {
+    fun saveApkToDownloads(context: Context, apk: File, version: String): SavedApk? {
+        val fileName = "HyperBoost-Engine-Pro-$version.apk"
+        val label = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            saveToMediaStore(context, apk, fileName)
+        } else {
+            saveToLegacyDownloads(context, apk, fileName)
+        }
+        return label?.let { SavedApk(it, apk) }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun saveToMediaStore(context: Context, apk: File, fileName: String): String? {
+        val resolver = context.contentResolver
+        val values = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+            put(MediaStore.MediaColumns.MIME_TYPE, "application/vnd.android.package-archive")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+            put(MediaStore.MediaColumns.IS_PENDING, 1)
+        }
+        val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        val uri = runCatching { resolver.insert(collection, values) }.getOrNull() ?: return null
+
+        return runCatching {
+            resolver.openOutputStream(uri)?.use { output ->
+                apk.inputStream().use { input -> input.copyTo(output) }
+            } ?: error("Could not open the Downloads file")
+            values.clear()
+            values.put(MediaStore.MediaColumns.IS_PENDING, 0)
+            resolver.update(uri, values, null, null)
+            "Downloads/$fileName"
+        }.getOrElse {
+            runCatching { resolver.delete(uri, null, null) }
             null
         }
+    }
+
+    private fun saveToLegacyDownloads(context: Context, apk: File, fileName: String): String? {
+        val publicDownloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val publicWrite = runCatching {
+            publicDownloads.mkdirs()
+            apk.copyTo(File(publicDownloads, fileName), overwrite = true)
+        }
+        if (publicWrite.isSuccess) return "Downloads/$fileName"
+
+        // Old Android versions may not have granted legacy storage. Keep a shareable copy in
+        // app-specific external storage instead of claiming it was saved to Downloads.
+        val fallbackDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.cacheDir
+        val fallback = runCatching {
+            fallbackDir.mkdirs()
+            apk.copyTo(File(fallbackDir, fileName), overwrite = true)
+        }
+        return if (fallback.isSuccess) "app storage/$fileName" else null
     }
 
     private fun readUrl(address: String): String {

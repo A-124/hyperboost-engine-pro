@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.7.0 - 2026-10-24
+
+### Truthful state
+- Touch Boost reports success only after `touch_prediction_status` is written and read back. State read-back no longer infers touch boost from the mouse `pointer_speed` setting.
+- Wi-Fi low-latency reports whether the extra framework command was accepted instead of assuming it worked.
+- Thermal override is checked through the thermal service where the ROM exposes it. Controls show **Verified**, **Requested (unverifiable)**, or **Not active** instead of always appearing engaged.
+- Core toggles re-read the device after each action, so the switches reflect the phone rather than the last request.
+- Compiled-game state now persists across app restarts.
+
+### Updates and storage
+- Signature-conflict APK export uses `MediaStore.Downloads` on Android 10+ and legacy storage on older versions, with a share-sheet fallback. The dialog shows the real saved location instead of assuming Downloads.
+- Device-specific setting snapshots are excluded from cloud backup and device transfer.
+
+### Cleanup
+- Removed the unused `FrametimeAnalyzer`, `SectionHeader`, template tests, unused usage-stats permission, and unused accessibility gesture APIs.
+- The accessibility service is now documented as optional foreground-game detection; Auto Tap continues to use Shizuku.
+- Expanded third-party notices for Firebase, Shizuku, AndroidX/Compose, Kotlin and test libraries.
+- Added `EngineStateParser` and `FeedbackRepository` unit tests.
+
+### Website and docs
+- Website refreshed with three real app screenshots, a responsive screenshot grid, generated hero/OG artwork and a lightbox.
+- Privacy policy updated for anonymous Firebase feedback.
+- README trimmed and feature copy aligned with the implementation.
+
+### Release status
+- CI builds and publishes the signed APK with `SHA256SUMS.txt`.
+- Device-specific behavior still varies; controls that a ROM rejects show as unsupported instead of silently succeeding.
+
+## 1.7.0-rc.1 - 2026-10-24
+
+Release candidate for v1.7.0. See the 1.7.0 notes below for the full change list.
+
 ## 1.6.0 - 2026-10-24
 
 ### Reliability and compatibility
@@ -44,9 +76,6 @@
 
 ## 1.4.2 - 2026-10-21
 
-### Ads
-- Failed banner requests stay completely hidden, with no error strip or dialog; automatic retries continue with capped backoff.
-
 ### Rootless tools
 - Added a Shizuku network ping check that measures average latency to Cloudflare.
 - Added a per-app background restriction switch for user apps; HyperBoost remembers each app's previous standby policy and restores it when switched off or when using Restore.
@@ -56,10 +85,7 @@
 
 ## 1.4.0 - 2026-10-21
 
-### Ads and updates
-- Corrected the Unity Ads Game ID to HyperBoost's registered Android app ID (`800403406`); the previous ID belonged to another app in the Unity account.
-- Added a compact banner-ad unavailable message with a one-tap retry, so a no-fill or placement error is visible instead of looking like a broken blank area.
-- Banner ads now retry indefinitely with a capped backoff, and successful loads reset the retry delay.
+### Updates
 - Update checks now show the GitHub API's error message, including rate-limit details, instead of only a generic HTTP status.
 - Kept SHA-256 verification, signature checks, and the guided reinstall flow for incompatible update signatures.
 
@@ -104,13 +130,6 @@
 - Downloads the APK, verifies its SHA-256 digest when provided by GitHub Releases, and opens Android's package installer for user confirmation.
 
 ## 1.3.5 - 2026-10-20
-
-### Ads
-- Banner now stays hidden until an ad actually fills, so the empty black strip is gone.
-- Banner retries on no-fill, refreshes every 60 seconds while visible, and is destroyed cleanly.
-- Interstitials now appear after every 2nd feature action (boost toggles, Clear Background, Storage Boost, Trim Caches), at most once per 90 seconds.
-- Interstitial and rewarded placements retry loading automatically instead of staying dead after a failed load.
-- Ad initialization retries if it fails.
 
 ### Shizuku setup
 - Setup guide rewritten as short numbered steps for Wireless debugging, with no computer needed. See docs/SHIZUKU_SETUP.md.

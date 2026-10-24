@@ -9,18 +9,15 @@ HyperBoost Engine Pro ("the App") is an Android gaming utility maintained by A-1
 - **Device and system information** needed for the features you use, such as Android version, device model, display and performance information, and settings you choose to view or change. Availability depends on your device and permissions.
 - **Game profiles and preferences**, stored locally on your device so the App can remember your choices.
 - **Optional feedback**: the category, your message, app version, Android version, device model, submission time and a `new` status. Feedback also uses an anonymous Firebase user ID. No name, email address, account or contact details are requested.
-- **Advertising**: Unity Ads may process a device/advertising identifier, IP address and ad interaction data to serve and measure ads. The App requests the Android advertising ID permission.
 
 ## How information is used
 
 - Local profiles and preferences are used only to provide the features you choose.
 - Feedback is used to diagnose issues and improve the App.
-- Ads support the App. Where available, watching a rewarded video hides ads for one hour.
 
 ## Sharing
 
 - **Google Firebase** provides anonymous sign-in and Firestore storage for feedback.
-- **Unity Ads** provides advertising.
 - **Shizuku** is a separate third-party app; its own privacy practices apply when you install and authorize it.
 - The developer does not sell personal information. Information may be disclosed if required by law or to protect the security and integrity of the App.
 
@@ -28,11 +25,10 @@ HyperBoost Engine Pro ("the App") is an Android gaming utility maintained by A-1
 
 - Local profiles and preferences can be removed by clearing the App's storage or uninstalling the App.
 - Feedback is retained until it has been reviewed and is no longer needed. To request deletion, open an issue in the project repository and include the approximate submission time; do not post private information.
-- Advertising data is retained according to Unity's policies.
 
 ## Permissions and control
 
-Android may request permissions or special access for particular features, including Shizuku authorization, overlay access, accessibility, notifications and installing app updates. Grant only the access needed for the features you use. You can revoke permissions in Android Settings; some features will stop working if the required access is removed. You can reset or limit your advertising ID in Android Settings.
+Android may request permissions or special access for particular features, including Shizuku authorization, overlay access, accessibility, notifications and installing app updates. Grant only the access needed for the features you use. You can revoke permissions in Android Settings; some features will stop working if the required access is removed.
 
 ## Children's privacy
 

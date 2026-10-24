@@ -52,7 +52,7 @@ The app is designed to work without root. Shizuku provides elevated ADB-level ac
 ### Display, input, and system tuning
 - **Display resolution scaling:** supported resolution changes, including a lower-resolution option where the device allows it.
 - **Refresh-rate controls:** applies supported settings and can restore the previous behavior.
-- **Touch and pointer settings:** supported touch-related, pointer-speed, and debounce controls.
+- **Touch settings:** supported touch-prediction and debounce options where the device permits.
 - **Animation controls:** adjusts supported window and transition animation settings.
 - **Graphics / rendering options:** selected Android rendering and SurfaceFlinger-related controls where supported.
 - **Wi-Fi and network settings:** selected network-related tuning options exposed by the device.
@@ -61,7 +61,7 @@ The app is designed to work without root. Shizuku provides elevated ADB-level ac
 
 ### Automation tools
 - **Auto Tap:** floating tap controls for repeated input, where configured and permitted.
-- **Macro automation:** accessibility-based automation tools for supported workflows.
+- **Game detection:** optional accessibility service that reports the foreground game faster for per-game profiles. Auto Tap uses Shizuku and does not need accessibility.
 - **Permission-guided setup:** entry points to configure Shizuku, overlay, and accessibility access as needed.
 
 ### Restore, updates, and support
@@ -79,7 +79,7 @@ The app is designed to work without root. Shizuku provides elevated ADB-level ac
 - **Android:** Android 8.0 (API 26) or later, with feature-specific compatibility.
 - **Shizuku:** install and start [Shizuku](https://shizuku.rikka.app/) and authorize HyperBoost for Shizuku-backed operations. See [docs/SHIZUKU_SETUP.md](docs/SHIZUKU_SETUP.md).
 - **Overlay permission:** needed for the floating HUD and crosshair tools.
-- **Accessibility permission:** needed for accessibility-based macro automation.
+- **Accessibility permission:** optional; enables faster foreground-game detection for profiles.
 - Grant only the permissions needed for the tools you choose to use.
 
 ## Install

@@ -13,7 +13,6 @@ Add these under **Settings → Secrets and variables → Actions** in this publi
 
 **Variables**
 - `RELEASE_CERT_SHA256`: SHA-256 fingerprint of the release certificate, used to verify the built APK.
-- `UNITY_GAME_ID`, `UNITY_TEST_MODE`, `UNITY_BANNER_ID`, `UNITY_INTERSTITIAL_ID`, `UNITY_REWARDED_ID` (optional ad configuration).
 
 On Windows PowerShell, encode the keystore with:
 

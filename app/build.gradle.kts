@@ -16,12 +16,14 @@ android {
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
+    // Keep the original applicationId for update continuity. The Kotlin namespace is different
+    // because the app started as an AI Studio project; changing it would break existing installs.
     applicationId = "com.aistudio.hyperboost.mkvxyz"
     minSdk = 26
     targetSdk = 34
     // CI passes these from the git tag (see .github/workflows/release.yml); local builds use the defaults.
     versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 8
-    versionName = System.getenv("VERSION_NAME") ?: "1.6.0"
+    versionName = System.getenv("VERSION_NAME") ?: "1.7.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

@@ -309,6 +309,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 performanceEngine.resetDisplayDensity()
             }
         }
+        // Restore the pre-game display if the app is closed while a per-game profile is active.
+        val displayPackage = gameDisplayPackage
+        val displayBackup = gameDisplayBackup
+        gameDisplayPackage = null
+        gameDisplayBackup = null
+        if (displayPackage != null) {
+            cleanupScope.launch {
+                val width = displayBackup?.overrideWidth
+                val height = displayBackup?.overrideHeight
+                if (width != null && height != null) {
+                    performanceEngine.setDisplayResolution(width, height)
+                    val density = displayBackup?.overrideDensity
+                    if (density != null) performanceEngine.setDisplayDensity(density)
+                    else performanceEngine.resetDisplayDensity()
+                } else {
+                    performanceEngine.resetDisplayResolution()
+                    performanceEngine.resetDisplayDensity()
+                }
+            }
+        }
         stabilityJob?.cancel()
         telemetryHub.release("guard")
         if (guardRestoreHz != null) cleanupScope.launch { releaseRefreshCap() }
@@ -511,6 +531,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private suspend fun restoreEverything() {
         sessionApplied.clear()
+        gameDisplayPackage = null
+        gameDisplayBackup = null
+        _displayOverrideWidth.value = null
         guardRestoreHz = null
         // Stop the guard first so it can't race the restore, then undo everything the engine changed.
         thermalGuardJob?.cancel()

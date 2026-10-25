@@ -38,8 +38,9 @@ The app is designed to work without root. Shizuku provides elevated ADB-level ac
 ## Features
 
 ### Gaming hub and profiles
-- **Master Turbo:** one place to run supported tuning actions.
-- **Per-game profiles:** keep game-related preferences organized.
+- **Master Boost:** one place to run supported tuning actions, also available from the Quick Settings tile.
+- **Per-game profiles:** keep game-related preferences organized, including an Android Game Mode choice (Performance / Standard / Battery, Android 12+).
+- **Quick Settings tile:** add the **HyperBoost Boost** tile to run Master Boost without opening the app.
 - **Refresh-rate selection:** choose from rates reported as supported by the device.
 - **More tuning modules:** cached-apps freezer, adaptive brightness off and a refresh-rate overlay.
 - **Quick access to tools:** open gaming controls and overlays from the dashboard.
@@ -70,7 +71,7 @@ The app is designed to work without root. Shizuku provides elevated ADB-level ac
 - **Read-back checks:** selected operations are checked against the device's reported state where possible.
 - **Thermal-aware safeguards:** some options include guards intended to reduce unsafe or unsuitable use.
 - **Status and error feedback:** unsupported or rejected operations are reported rather than silently treated as successful.
-- **Update flow:** checks for updates, verifies the APK checksum, and opens Android's system installer through a granted `FileProvider` URI.
+- **Update flow:** checks the release manifest and versionCode, verifies SHA-256 and signature compatibility, then opens Android's system installer through a granted `FileProvider` URI. If the installer does not complete, the saved APK can be opened or shared again.
 - **In-app feedback:** optional; requires your own Firebase project (see below).
 
 > **Compatibility note:** Android and device manufacturers restrict different system interfaces. Some readings or controls may be unavailable, and successful application of a setting does not guarantee a specific FPS result. Avoid forcing sustained performance at the expense of device temperature or stability.

@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.7.3 - 2026-10-25
+
+### New
+- Per-game Android Game Mode: Performance, Standard or Battery. Saved per game and applied when the game comes to the front (Android 12+, device-dependent).
+- Boost-only Quick Settings tile: tap **HyperBoost Boost** to run Master Boost without opening the app. It shows active state and opens the app if Shizuku is not ready.
+- The tile can be added from the Quick Settings edit panel.
+
+### Updates
+- CI now attaches `version.json` with the APK's `versionCode`, `sha256` and minimum supported version.
+- The updater compares `versionCode` as well as version name, so a re-released build is detected even when the version name is unchanged.
+- If Android's system installer does not complete, the app offers the saved APK again (open or share) on the next launch.
+- SHA-256 verification and signature compatibility checks remain in place.
+- **Users on v1.7.0 or older must install v1.7.3 manually once.** Those builds still use the removed PackageInstaller path and cannot update themselves.
+
+### Unchanged
+- No render-scale or resolution changer. The app does not change `wm size` or `wm density`.
+- Boost module count remains 11.
+
 ## 1.7.2 - 2026-10-25
 
 ### Removed

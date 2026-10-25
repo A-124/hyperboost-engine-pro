@@ -236,8 +236,23 @@ jobs:
           fi
 
           (cd dist && sha256sum "$(basename "$apk")" > SHA256SUMS.txt)
+          sha="$(awk '{print $1}' dist/SHA256SUMS.txt)"
+          minimum="$(python3 -c "import json; print(json.load(open('update.json'))['minimumSupportedVersion'])")"
+          cat > dist/version.json <<EOF
+          {
+            "versionCode": ${VERSION_CODE},
+            "versionName": "${VERSION_NAME}",
+            "apk": "$(basename "$apk")",
+            "apkUrl": "https://github.com/A-124/hyperboost-engine-pro/releases/download/v${VERSION_NAME}/$(basename "$apk")",
+            "sha256": "${sha}",
+            "minimumSupportedVersion": "${minimum}",
+            "notes": "",
+            "mandatory": false
+          }
+          EOF
           ls -lh dist
           cat dist/SHA256SUMS.txt
+          cat dist/version.json
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -305,5 +320,6 @@ jobs:
           files: |
             dist/HyperBoost-Engine-Pro-*.apk
             dist/SHA256SUMS.txt
+            dist/version.json
           fail_on_unmatched_files: true
           prerelease: ${{ needs.preflight.outputs.prerelease == 'true' }}

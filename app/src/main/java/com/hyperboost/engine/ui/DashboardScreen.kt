@@ -101,6 +101,7 @@ fun DashboardScreen(
     var showCrosshairDialog by remember { mutableStateOf(false) }
     var showAdbGuideDialog by remember { mutableStateOf(false) }
     var showFeedbackDialog by remember { mutableStateOf(false) }
+    var configuringModeGame by remember { mutableStateOf<MainViewModel.GameProfile?>(null) }
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     val currentTab = DashTab.entries[selectedTab]
     val shizukuAuthorized = shizukuStatus == ShizukuManager.ShizukuStatus.AUTHORIZED
@@ -321,7 +322,8 @@ fun DashboardScreen(
                             games = games,
                             onLaunchGame = { viewModel.launchGame(it) },
                             onToggleGameOpt = { viewModel.toggleGameOptimization(it) },
-                            onCompileShaders = { viewModel.compileGameShaders(it) }
+                            onCompileShaders = { viewModel.compileGameShaders(it) },
+                            onConfigureGameMode = { configuringModeGame = it }
                         )
                     }
                 }
@@ -349,6 +351,13 @@ fun DashboardScreen(
                     snackbarHostState.showSnackbar(if (sent) "Thanks, your feedback was sent." else "Couldn't send feedback. Check your connection and Firebase setup, then try again.")
                 }
             }
+        )
+    }
+    configuringModeGame?.let { game ->
+        GameModeDialog(
+            game = game,
+            onDismiss = { configuringModeGame = null },
+            onSelect = { mode -> viewModel.setGameMode(game.packageName, mode) }
         )
     }
 }
@@ -1378,7 +1387,8 @@ fun GameLauncherSection(
     games: List<MainViewModel.GameProfile>,
     onLaunchGame: (MainViewModel.GameProfile) -> Unit,
     onToggleGameOpt: (MainViewModel.GameProfile) -> Unit,
-    onCompileShaders: (MainViewModel.GameProfile) -> Unit
+    onCompileShaders: (MainViewModel.GameProfile) -> Unit,
+    onConfigureGameMode: (MainViewModel.GameProfile) -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -1429,7 +1439,8 @@ fun GameLauncherSection(
                         game = game,
                         onLaunch = { onLaunchGame(game) },
                         onToggleOpt = { onToggleGameOpt(game) },
-                        onCompile = { onCompileShaders(game) }
+                        onCompile = { onCompileShaders(game) },
+                        onConfigureGameMode = { onConfigureGameMode(game) }
                     )
                 }
             }
@@ -1442,8 +1453,10 @@ fun GameCard(
     game: MainViewModel.GameProfile,
     onLaunch: () -> Unit,
     onToggleOpt: () -> Unit,
-    onCompile: () -> Unit
+    onCompile: () -> Unit,
+    onConfigureGameMode: () -> Unit
 ) {
+    val modeLabel = game.gameMode.replaceFirstChar { it.uppercase() }
     Card(
         modifier = Modifier
             .width(170.dp)
@@ -1489,11 +1502,24 @@ fun GameCard(
                     }
                 }
 
-                Switch(
-                    checked = game.isOptimized,
-                    onCheckedChange = { onToggleOpt() },
-                    modifier = Modifier.size(36.dp)
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = onConfigureGameMode,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Tune,
+                            contentDescription = "Game mode",
+                            tint = Color(0xFF00E5FF),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                    Switch(
+                        checked = game.isOptimized,
+                        onCheckedChange = { onToggleOpt() },
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -1504,9 +1530,9 @@ fun GameCard(
                     color = Color.White
                 )
                 Text(
-                    text = if (game.isCompiled) "✓ AOT Shaders Compiled"
+                    text = (if (game.isCompiled) "✓ AOT Shaders Compiled"
                     else if (game.isOptimized) "Auto-Boost ${game.targetRefreshRate}Hz"
-                    else "Standard Profile",
+                    else "Standard Profile") + " · $modeLabel",
                     fontSize = 10.sp,
                     color = if (game.isCompiled) Color(0xFF00E676)
                     else if (game.isOptimized) Color(0xFF00E5FF)
@@ -1543,6 +1569,48 @@ fun GameCard(
             }
         }
     }
+}
+
+@Composable
+private fun GameModeDialog(
+    game: MainViewModel.GameProfile,
+    onDismiss: () -> Unit,
+    onSelect: (String) -> Unit
+) {
+    val modes = listOf(
+        "performance" to "Performance",
+        "standard" to "Standard",
+        "battery" to "Battery"
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Game mode") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(game.appName, fontWeight = FontWeight.Bold)
+                Text(
+                    "Android 12+ only. Applied when this game comes to the front with Optimize on; support varies by device.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF90A4AE)
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    modes.forEach { (id, label) ->
+                        FilterChip(
+                            selected = game.gameMode == id,
+                            onClick = {
+                                onSelect(id)
+                                onDismiss()
+                            },
+                            label = { Text(label) }
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        }
+    )
 }
 
 @Composable

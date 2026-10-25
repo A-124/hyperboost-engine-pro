@@ -42,6 +42,7 @@ class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
 
     private var pendingUpdate: UpdateInfo? = null
+    private var pendingInstallDialogShown = false
 
     private val requestNotificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -67,6 +68,7 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+        checkPendingInstall()
     }
 
     override fun onStart() {
@@ -91,6 +93,7 @@ class MainActivity : ComponentActivity() {
             pendingUpdate = null
             startUpdateDownload(pending)
         }
+        checkPendingInstall()
     }
 
     private suspend fun checkForUpdates(manual: Boolean) {
@@ -107,14 +110,21 @@ class MainActivity : ComponentActivity() {
             val update = UpdateManager.fetchLatest()
             prefs.edit().putLong("last_check_timestamp", now).apply()
 
-            val current = packageManager.getPackageInfo(packageName, 0).versionName ?: "0.0.0"
-            val mandatory = UpdateManager.compareVersions(current, update.minimumSupportedVersion) < 0
-            val available = UpdateManager.compareVersions(update.version, current) > 0
+            val packageInfo = packageManager.getPackageInfo(packageName, 0)
+            val currentName = packageInfo.versionName ?: "0.0.0"
+            val currentCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                packageInfo.longVersionCode
+            } else {
+                @Suppress("DEPRECATION")
+                packageInfo.versionCode.toLong()
+            }
+            val mandatory = UpdateManager.compareVersions(currentName, update.minimumSupportedVersion) < 0
+            val available = UpdateManager.isNewer(currentCode, currentName, update)
 
             if (!mandatory && !available) {
                 if (manual) AlertDialog.Builder(this)
                     .setTitle("You're up to date")
-                    .setMessage("HyperBoost Engine Pro $current is the latest version.")
+                    .setMessage("HyperBoost Engine Pro $currentName is the latest version.")
                     .setPositiveButton("OK", null)
                     .show()
                 return
@@ -239,9 +249,11 @@ class MainActivity : ComponentActivity() {
                     .show()
             }
             else -> {
+                markPendingInstall(apkFile, update)
                 try {
                     UpdateManager.launchInstallIntent(this, apkFile)
                 } catch (e: Exception) {
+                    clearPendingInstall()
                     AlertDialog.Builder(this)
                         .setTitle("Couldn't open installer")
                         .setMessage(
@@ -254,6 +266,110 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun markPendingInstall(apk: File, update: UpdateInfo) {
+        val targetCode = if (update.versionCode > 0) {
+            update.versionCode
+        } else {
+            @Suppress("DEPRECATION")
+            val info = packageManager.getPackageArchiveInfo(apk.absolutePath, 0)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                info?.longVersionCode?.toInt() ?: 0
+            } else {
+                info?.versionCode ?: 0
+            }
+        }
+        markPendingInstall(apk, targetCode, update.version)
+    }
+
+    private fun markPendingInstall(apk: File, targetCode: Int, version: String) {
+        pendingInstallDialogShown = false
+        getSharedPreferences("hyperboost_updates", Context.MODE_PRIVATE).edit()
+            .putInt("pending_install_code", targetCode)
+            .putString("pending_install_path", apk.absolutePath)
+            .putString("pending_install_version", version)
+            .apply()
+    }
+
+    private fun clearPendingInstall() {
+        getSharedPreferences("hyperboost_updates", Context.MODE_PRIVATE).edit()
+            .remove("pending_install_code")
+            .remove("pending_install_path")
+            .remove("pending_install_version")
+            .apply()
+    }
+
+    /**
+     * The system installer does not report back to us. If the installed versionCode did not reach
+     * the target after opening it, offer the APK again instead of leaving the user stuck.
+     */
+    private fun checkPendingInstall() {
+        if (pendingInstallDialogShown) return
+        val prefs = getSharedPreferences("hyperboost_updates", Context.MODE_PRIVATE)
+        val targetCode = prefs.getInt("pending_install_code", 0)
+        if (targetCode <= 0) return
+
+        val info = try {
+            packageManager.getPackageInfo(packageName, 0)
+        } catch (_: Exception) {
+            return
+        }
+        val currentCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            info.longVersionCode
+        } else {
+            @Suppress("DEPRECATION")
+            info.versionCode.toLong()
+        }
+        if (currentCode >= targetCode) {
+            clearPendingInstall()
+            return
+        }
+
+        val path = prefs.getString("pending_install_path", null)
+        val apk = path?.let { File(it) }?.takeIf { it.isFile && it.length() > 0L }
+        val version = prefs.getString("pending_install_version", "update") ?: "update"
+        pendingInstallDialogShown = true
+
+        val builder = AlertDialog.Builder(this)
+            .setTitle("Update didn't finish")
+            .setMessage(
+                "Android's installer did not complete the update to $version. " +
+                    "You can open the saved APK again, share it, or check for updates again."
+            )
+            .setOnDismissListener { pendingInstallDialogShown = false }
+            .setOnCancelListener {
+                pendingInstallDialogShown = false
+                clearPendingInstall()
+            }
+
+        if (apk != null) {
+            builder.setPositiveButton("Open APK") { _, _ ->
+                try {
+                    UpdateManager.launchInstallIntent(this, apk)
+                    markPendingInstall(apk, targetCode, version)
+                } catch (e: Exception) {
+                    clearPendingInstall()
+                    AlertDialog.Builder(this)
+                        .setTitle("Couldn't open installer")
+                        .setMessage(e.message ?: "Share the APK and install it manually.")
+                        .setPositiveButton("Share APK") { _, _ -> shareApk(apk, version) }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                }
+            }
+            builder.setNeutralButton("Share APK") { _, _ ->
+                clearPendingInstall()
+                shareApk(apk, version)
+            }
+        } else {
+            builder.setPositiveButton("Check again") { _, _ ->
+                clearPendingInstall()
+                lifecycleScope.launch { checkForUpdates(manual = true) }
+            }
+        }
+        builder.setNegativeButton("Dismiss") { _, _ -> clearPendingInstall() }
+        builder.show()
     }
 
     private fun shareApk(apk: File, version: String) {

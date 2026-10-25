@@ -43,7 +43,7 @@ On Windows PowerShell, encode the keystore with:
    git push origin v1.6.1
    ```
 
-6. Open **Actions → Release** and wait for the run to finish. It runs unit tests, builds and verifies the signed APK, and publishes a release here with `HyperBoost-Engine-Pro-<version>.apk` and `SHA256SUMS.txt`.
+6. Open **Actions → Release** and wait for the run to finish. It runs unit tests, builds and verifies the signed APK, and publishes a release here with `HyperBoost-Engine-Pro-<version>.apk`, `SHA256SUMS.txt` and `version.json`.
 
 To rebuild an existing tag, run **Actions → Release → Run workflow** and enter the tag, for example `v1.6.1`. Move a wrong tag with `git tag -f` and `git push -f origin v1.6.1` only if you are sure.
 
@@ -54,8 +54,12 @@ The in-app updater in `app/src/main/java/com/hyperboost/engine/update/UpdateMana
 - release tag: `v<version>`
 - APK asset: `HyperBoost-Engine-Pro-<version>.apk`
 - checksum asset: `SHA256SUMS.txt`
+- version manifest: `version.json` with `versionCode`, `versionName`, `apk`, `apkUrl`, `sha256`, `minimumSupportedVersion`, `notes` and `mandatory`
 
-Do not rename these. If the minimum supported version changes, update `update.json` as well.
+The workflow generates `version.json` from the tag and the run's `VERSION_CODE`. The app compares
+`versionCode` with the installed package so a re-released build is detected even when the version
+name is unchanged. Do not rename these assets. If the minimum supported version changes, update
+`update.json` as well.
 
 ## Website files
 
@@ -63,4 +67,7 @@ Do not rename these. If the minimum supported version changes, update `update.js
 
 ## Alternative: build privately and publish manually
 
-If you prefer to build in the private mirror, download the APK and `SHA256SUMS.txt` from the private release and attach them to a release here with the same tag, names, and notes. Keep the public releases page as the only download link users are given.
+If you prefer to build in the private mirror, download the APK, `SHA256SUMS.txt` and `version.json` from the private release and attach them to a release here with the same tag, names, and notes. Keep the public releases page as the only download link users are given.
+
+Users on v1.7.0 or older still run the removed PackageInstaller flow and cannot update themselves;
+tell them to install the new APK manually once.

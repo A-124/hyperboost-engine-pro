@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">HyperBoost</string>
     <string name="app_full_title">HyperBoost Engine Pro</string>
+    <string name="quick_settings_tile_label">HyperBoost Boost</string>
     <string name="accessibility_service_name">HyperBoost Game Detection</string>
     <string name="accessibility_service_description">Detects the active foreground game so HyperBoost can apply your saved performance profile. This service is optional; Auto Tap uses Shizuku and does not need accessibility.</string>
     

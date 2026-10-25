@@ -78,7 +78,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val targetRefreshRate: Int = 120,
         val forceVulkan: Boolean = true,
         val isOptimized: Boolean = false,
-        val isCompiled: Boolean = false
+        val isCompiled: Boolean = false,
+        /** Android 12+ per-game mode: performance, standard or battery. */
+        val gameMode: String = "performance"
     )
 
     /** Every value is a real measurement; null means "not measurable right now" (never faked). */
@@ -902,7 +904,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val res = performanceEngine.compileAppSpeedProfile(game.packageName).getOrThrow()
                 performanceEngine.whitelistAppFromDoze(game.packageName)
-                performanceEngine.setAndroidGameMode(game.packageName, "performance")
+                performanceEngine.setAndroidGameMode(game.packageName, game.gameMode)
 
                 val updated = _installedGames.value.map {
                     if (it.packageName == game.packageName) it.copy(isCompiled = true, isOptimized = true)
@@ -983,6 +985,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun setGameMode(packageName: String, mode: String) {
+        val clean = mode.takeIf { it in setOf("performance", "standard", "battery") } ?: return
+        _installedGames.update { list ->
+            list.map { if (it.packageName == packageName) it.copy(gameMode = clean) else it }
+        }
+        gamePrefs.edit().putString("mode/$packageName", clean).apply()
+        emitMessage("Game mode saved: $clean. It applies when the game comes to the front.")
+    }
+
     fun toggleGameOptimization(game: GameProfile) {
         val updatedList = _installedGames.value.map {
             if (it.packageName == game.packageName) it.copy(isOptimized = !it.isOptimized)
@@ -1008,7 +1019,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     .onSuccess { _isVulkanActive.value = true }
                     .onFailure { results += "vulkan: ${it.message}" }
             }
-            performanceEngine.setAndroidGameMode(game.packageName, "performance")
+            performanceEngine.setAndroidGameMode(game.packageName, game.gameMode)
                 .onFailure { results += "game mode: ${it.message}" }
             performanceEngine.whitelistAppFromDoze(game.packageName)
                 .onFailure { results += "doze: ${it.message}" }
@@ -1057,7 +1068,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         forceVulkan = true,
                         // Remembered per game; new games default to auto-boost on.
                         isOptimized = gamePrefs.getBoolean("opt/${app.packageName}", true),
-                        isCompiled = gamePrefs.getBoolean("compiled/${app.packageName}", false)
+                        isCompiled = gamePrefs.getBoolean("compiled/${app.packageName}", false),
+                        gameMode = gamePrefs.getString("mode/${app.packageName}", "performance")
+                            ?.takeIf { it in setOf("performance", "standard", "battery") }
+                            ?: "performance"
                     )
                 }
                 .sortedBy { it.appName.lowercase() }

@@ -553,16 +553,21 @@ class PerformanceEngine(context: Context) {
     )
 
     /** Set Android OS Game Mode (performance / standard / battery). */
-    suspend fun setAndroidGameMode(packageName: String, mode: String = "performance"): Result<String> = runCatching {
-        requirePackage(packageName)
-        require(mode in setOf("performance", "standard", "battery")) { "Invalid game mode" }
-    }.fold(
-        onSuccess = {
-            trackPackage("gamemode", packageName)
-            exec("cmd game mode $mode $packageName", "Android Game Mode set to $mode for $packageName", "Game Mode unsupported or failed")
-        },
-        onFailure = { Result.failure<String>(it) }
-    )
+    suspend fun setAndroidGameMode(packageName: String, mode: String = "performance"): Result<String> {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            return Result.failure(UnsupportedOperationException("Android Game Mode needs Android 12+"))
+        }
+        return runCatching {
+            requirePackage(packageName)
+            require(mode in setOf("performance", "standard", "battery")) { "Invalid game mode" }
+        }.fold(
+            onSuccess = {
+                trackPackage("gamemode", packageName)
+                exec("cmd game mode $mode $packageName", "Android Game Mode set to $mode for $packageName", "Game Mode unsupported or failed")
+            },
+            onFailure = { Result.failure<String>(it) }
+        )
+    }
 
     /** Put a non-essential background package into the restricted standby bucket. */
     suspend fun restrictBackgroundApp(packageName: String): Result<String> = runCatching {

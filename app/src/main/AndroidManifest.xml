@@ -98,6 +98,28 @@
                 android:value="Floating auto tap button that repeats taps via Shizuku" />
         </service>
 
+        <!-- One-tap Master Boost from the Quick Settings panel -->
+        <service
+            android:name=".services.QuickBoostService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Short-lived Master Boost triggered from a Quick Settings tile" />
+        </service>
+
+        <service
+            android:name=".services.BoostTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_boost"
+            android:label="@string/quick_settings_tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
     </application>
 
 </manifest>

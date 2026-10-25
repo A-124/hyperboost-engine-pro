@@ -19,6 +19,7 @@ import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
+import java.util.Locale
 
 data class UpdateInfo(
     val version: String,
@@ -187,7 +188,8 @@ object UpdateManager {
                             lastProgressUpdate = now
                             val percent = ((bytesDownloaded * 100) / totalBytes).toInt()
                             withContext(Dispatchers.Main) {
-                                onProgress(bytesDownloaded, totalBytes, percent)
+                                // A UI-only failure must never abort a verified download.
+                                runCatching { onProgress(bytesDownloaded, totalBytes, percent) }
                             }
                         }
                     }
@@ -202,6 +204,20 @@ object UpdateManager {
         }
         apk
     }
+
+    /**
+     * Keeps the literal percent sign in the progress text from being parsed as a format flag.
+     * Without the escaped `%%`, Java throws `IllegalFormatFlagsException: Flags = '('` on the
+     * first progress tick and aborts the download before the installer can open.
+     */
+    internal fun formatDownloadProgress(percent: Int, downloadedBytes: Long, totalBytes: Long): String =
+        String.format(
+            Locale.US,
+            "Downloading... %d%% (%.1f MB / %.1f MB)",
+            percent,
+            downloadedBytes / (1024.0 * 1024.0),
+            totalBytes / (1024.0 * 1024.0)
+        )
 
     /**
      * Checks if the downloaded APK is signed with the same certificate as the installed app.

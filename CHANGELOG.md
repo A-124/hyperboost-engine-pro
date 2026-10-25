@@ -2,17 +2,24 @@
 
 ## 1.7.3 - 2026-10-25
 
+> **Re-issued build.** The first v1.7.3 upload and every earlier build stop in-app downloads at the first progress update. This build fixes that bug. If you downloaded v1.7.3 before this re-issue, download it again; the version name is the same and the versionCode is newer. The release page and APK URL are unchanged.
+
 ### New
 - Per-game Android Game Mode: Performance, Standard or Battery. Saved per game and applied when the game comes to the front (Android 12+, device-dependent).
 - Boost-only Quick Settings tile: tap **HyperBoost Boost** to run Master Boost without opening the app. It shows active state and opens the app if Shizuku is not ready.
 - The tile can be added from the Quick Settings edit panel.
+
+### Update fixes
+- Fixed in-app downloads failing immediately with `Update failed: Flags = '('`. The progress line passed an unescaped `%` into Java's formatter; the first progress tick threw `IllegalFormatFlagsException` and aborted the download before the installer opened. The percent is now escaped and covered by a unit test.
+- A UI-only progress failure can no longer abort a verified download.
+- **All builds up to the first v1.7.3 upload have this bug and cannot update themselves. Install the current v1.7.3 APK manually once.** Later updates work in-app.
+- This corrects the earlier note that only v1.7.0 and older used the broken path.
 
 ### Updates
 - CI now attaches `version.json` with the APK's `versionCode`, `sha256` and minimum supported version.
 - The updater compares `versionCode` as well as version name, so a re-released build is detected even when the version name is unchanged.
 - If Android's system installer does not complete, the app offers the saved APK again (open or share) on the next launch.
 - SHA-256 verification and signature compatibility checks remain in place.
-- **Users on v1.7.0 or older must install v1.7.3 manually once.** Those builds still use the removed PackageInstaller path and cannot update themselves.
 
 ### Unchanged
 - No render-scale or resolution changer. The app does not change `wm size` or `wm density`.

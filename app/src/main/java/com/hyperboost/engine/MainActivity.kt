@@ -199,9 +199,7 @@ class MainActivity : ComponentActivity() {
             try {
                 val apkFile = UpdateManager.downloadAndInstall(this@MainActivity, update) { bytesDownloaded, totalBytes, percent ->
                     progressBar.progress = percent
-                    val mbDownloaded = bytesDownloaded / (1024 * 1024.0)
-                    val mbTotal = totalBytes / (1024 * 1024.0)
-                    statusText.text = "Downloading... $percent% (%.1f MB / %.1f MB)".format(mbDownloaded, mbTotal)
+                    statusText.text = UpdateManager.formatDownloadProgress(percent, bytesDownloaded, totalBytes)
                 }
                 progressDialog.dismiss()
                 handleDownloadedApk(apkFile, update)

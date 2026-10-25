@@ -61,6 +61,11 @@ The workflow generates `version.json` from the tag and the run's `VERSION_CODE`.
 name is unchanged. Do not rename these assets. If the minimum supported version changes, update
 `update.json` as well.
 
+To re-issue a version, move the existing tag to the fixed commit and push it again; the workflow
+keeps the same release and replaces the assets under the same names (`overwrite_files: true`).
+Existing download URLs continue to serve the fixed APK, and the new `versionCode` identifies the
+replacement build.
+
 ## Website files
 
 `index.html`, `assets/`, `robots.txt`, `sitemap.xml`, and `update.json` live in the repository root and are deployed by Vercel from `main`. Keep them in place; the app fetches `update.json` from the raw `main` branch.

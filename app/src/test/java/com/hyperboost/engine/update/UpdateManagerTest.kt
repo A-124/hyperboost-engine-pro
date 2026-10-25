@@ -58,6 +58,14 @@ class UpdateManagerTest {
     }
 
     @Test
+    fun downloadProgressEscapesLiteralPercent() {
+        assertEquals(
+            "Downloading... 42% (1.0 MB / 20.0 MB)",
+            UpdateManager.formatDownloadProgress(42, 1024L * 1024L, 20L * 1024L * 1024L)
+        )
+    }
+
+    @Test
     fun compatibilityResult_types() {
         val compatible = CompatibilityResult.Compatible
         val cannotVerify = CompatibilityResult.CannotVerify

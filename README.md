@@ -99,6 +99,8 @@ The app is designed to work without root. Shizuku provides elevated ADB-level ac
 
 The app reads the latest release from this repository (`releases/latest`) and the minimum supported version from `update.json`. Release assets must keep the names `HyperBoost-Engine-Pro-<version>.apk` and `SHA256SUMS.txt`.
 
+> **Re-issued v1.7.3:** if you installed the earlier v1.7.3 upload or any older build, install the current v1.7.3 APK manually once. Those builds stop in-app downloads at the first progress update because of a formatting bug; this build fixes it, so later updates work from inside the app. The release page and APK URL are unchanged.
+
 ## Safety and privacy
 
 - Review each tuning option before enabling it; device and vendor behavior varies.

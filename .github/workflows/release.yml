@@ -322,4 +322,5 @@ jobs:
             dist/SHA256SUMS.txt
             dist/version.json
           fail_on_unmatched_files: true
+          overwrite_files: true
           prerelease: ${{ needs.preflight.outputs.prerelease == 'true' }}

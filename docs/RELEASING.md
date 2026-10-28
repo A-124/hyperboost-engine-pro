@@ -10,6 +10,7 @@ Add these under **Settings → Secrets and variables → Actions** in this publi
 - `KEYSTORE_BASE64`: base64 of the release keystore file.
 - `STORE_PASSWORD`: keystore password.
 - `KEY_PASSWORD`: key password.
+- `GOOGLE_SERVICES_JSON`: the contents of `app/google-services.json`. CI writes it before the build; without it the app builds, but in-app feedback is unavailable (the GitHub fallback still works).
 
 **Variables**
 - `RELEASE_CERT_SHA256`: SHA-256 fingerprint of the release certificate, used to verify the built APK.
@@ -70,9 +71,29 @@ replacement build.
 
 `index.html`, `assets/`, `robots.txt`, `sitemap.xml`, and `update.json` live in the repository root and are deployed by Vercel from `main`. Keep them in place; the app fetches `update.json` from the raw `main` branch.
 
+### Optional `update.json` fields
+
+Besides the minimum supported version, `update.json` may carry:
+
+```json
+{
+  "minimumSupportedVersion": "1.7.3",
+  "downloadPage": "https://github.com/A-124/hyperboost-engine-pro/releases/latest",
+  "blockedVersions": ["1.7.1"],
+  "blockedVersionCodes": [100042],
+  "notice": "Short one-time advisory shown to every user."
+}
+```
+
+- `downloadPage`: opened by the **Open download page** action offered on every update failure.
+- `blockedVersions`: version names that get a non-dismissable update prompt.
+- `blockedVersionCodes`: exact `versionCode` values that get the same prompt. Use this when a re-issued build kept its version name, because the name alone would also block the fixed build.
+- `notice`: shown once to every user; use it for advisories that are not tied to a version.
+
+The app reads this file on launch, so these fields take effect on the next app launch without shipping a release.
+
 ## Alternative: build privately and publish manually
 
 If you prefer to build in the private mirror, download the APK, `SHA256SUMS.txt` and `version.json` from the private release and attach them to a release here with the same tag, names, and notes. Keep the public releases page as the only download link users are given.
 
-Users on v1.7.0 or older still run the removed PackageInstaller flow and cannot update themselves;
-tell them to install the new APK manually once.
+To move users off a broken build, list its version name in `blockedVersions` (or its exact `versionCode` in `blockedVersionCodes`) in `update.json`; that is the supported way to force an update without a new release. Builds whose updater cannot work at all are covered by the in-app download-page fallback.

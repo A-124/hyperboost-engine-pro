@@ -2,7 +2,7 @@
 
 HyperBoost can send user-initiated feedback through Firebase Authentication (anonymous) and Cloud Firestore. This is optional: the public source deliberately does **not** include the maintainer's `app/google-services.json`, `.firebaserc`, or Firebase project details.
 
-Without a Firebase configuration the app still builds and runs. The feedback form reports `Firebase is not configured. Add app/google-services.json.` instead of sending anything.
+Without a Firebase configuration the app still builds and runs. The feedback form reports that this build has no Firebase configuration and offers **Send on GitHub** instead, which opens a pre-filled issue and needs no backend.
 
 ## Enable feedback in your own build
 

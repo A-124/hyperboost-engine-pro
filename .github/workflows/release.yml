@@ -2,7 +2,7 @@ name: Release
 
 # Runs for version tags (v1.3.5) or a manual rebuild of an existing tag.
 # This is the public repository: the release it publishes is what users download
-# and what the in-app updater checks. See RELEASING.md for the required secrets.
+# and what the in-app updater checks. See docs/RELEASING.md for the required secrets.
 # A debug-signed APK is never published from this workflow.
 on:
   push:
@@ -152,6 +152,29 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+
+      - name: Write Firebase configuration
+        shell: bash
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          set -euo pipefail
+          # The file is git-ignored, so without this step the published APK has no FirebaseApp and
+          # in-app feedback fails before it reaches the network. The build still succeeds, which is
+          # why this went unnoticed: google-services is configured to warn, not fail.
+          if [[ -z "$GOOGLE_SERVICES_JSON" ]]; then
+            echo "::warning::GOOGLE_SERVICES_JSON is not set. This APK ships without Firebase: in-app feedback falls back to GitHub and capability reports stay off."
+            exit 0
+          fi
+          printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
+          python3 - <<'PY'
+          import json
+          with open("app/google-services.json") as handle:
+              config = json.load(handle)
+          project = config.get("project_info", {}).get("project_id", "unknown")
+          clients = len(config.get("client", []))
+          print(f"Firebase project: {project} ({clients} client entries)")
+          PY
 
       - name: Restore release keystore
         if: needs.preflight.outputs.signing_ready == 'true'

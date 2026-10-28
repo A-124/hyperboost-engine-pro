@@ -35,12 +35,14 @@ import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import android.content.Intent
 import com.hyperboost.engine.ads.AdManager
 import com.hyperboost.engine.ads.UnityBanner
 import com.hyperboost.engine.ads.findActivity
 import kotlinx.coroutines.launch
 import com.hyperboost.engine.core.PerformanceEngine
 import com.hyperboost.engine.core.ShizukuManager
+import com.hyperboost.engine.telemetry.CapabilityReporter
 import com.hyperboost.engine.ui.components.HbCard
 import com.hyperboost.engine.ui.components.StatChip
 import com.hyperboost.engine.ui.components.StatTile
@@ -345,10 +347,14 @@ fun DashboardScreen(
         FeedbackDialog(
             onDismiss = { showFeedbackDialog = false },
             onSubmit = { category, message -> FeedbackRepository.submit(adContext, category, message) },
+            onGitHubFallback = { category, message -> FeedbackRepository.issueUrl(adContext, category, message) },
             onResult = { sent ->
                 if (sent) showFeedbackDialog = false
                 adScope.launch {
-                    snackbarHostState.showSnackbar(if (sent) "Thanks, your feedback was sent." else "Couldn't send feedback. Check your connection and Firebase setup, then try again.")
+                    snackbarHostState.showSnackbar(
+                        if (sent) "Thanks, your feedback was sent."
+                        else "Feedback was not sent. You can still send it from GitHub."
+                    )
                 }
             }
         )
@@ -366,18 +372,38 @@ fun DashboardScreen(
 private fun FeedbackDialog(
     onDismiss: () -> Unit,
     onSubmit: suspend (String, String) -> Result<Unit>,
+    onGitHubFallback: (String, String) -> String,
     onResult: (Boolean) -> Unit
 ) {
     var category by rememberSaveable { mutableStateOf("Idea") }
     var message by rememberSaveable { mutableStateOf("") }
     var submitting by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    var shareCapability by remember { mutableStateOf(CapabilityReporter.isEnabled(context)) }
+
+    fun openOnGitHub() {
+        runCatching {
+            context.startActivity(
+                Intent(Intent.ACTION_VIEW, android.net.Uri.parse(onGitHubFallback(category, message.trim())))
+            )
+            onDismiss()
+        }.onFailure { error = "Couldn't open the browser. The repository is github.com/A-124/hyperboost-engine-pro." }
+    }
+
     AlertDialog(
         onDismissRequest = { if (!submitting) onDismiss() },
         title = { Text("Send feedback") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Tell us what you think. Your message includes the app version, Android version, and device model, but no account or contact details.", style = MaterialTheme.typography.bodySmall)
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "Tell us what you think. Your message includes the app version, Android version, and device model, but no account or contact details.",
+                    style = MaterialTheme.typography.bodySmall
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("Idea", "Bug", "Other").forEach { option ->
                         FilterChip(selected = category == option, onClick = { category = option }, label = { Text(option) })
@@ -394,6 +420,36 @@ private fun FeedbackDialog(
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                     supportingText = { Text("${message.length}/2000") }
                 )
+
+                // Shown only after a failed attempt: the real reason, plus a path that always works.
+                error?.let { reason ->
+                    Text(reason, style = MaterialTheme.typography.bodySmall, color = DangerRed)
+                    TextButton(
+                        onClick = { openOnGitHub() },
+                        enabled = message.isNotBlank(),
+                        contentPadding = PaddingValues(0.dp)
+                    ) { Text("Send on GitHub instead") }
+                }
+
+                HorizontalDivider()
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Share device compatibility", style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            "Anonymous. Records which settings your device accepts or rejects — never values, app names or messages.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = shareCapability,
+                        onCheckedChange = { enabled ->
+                            shareCapability = enabled
+                            CapabilityReporter.setEnabled(context, enabled)
+                            if (enabled) CapabilityReporter.flush()
+                        }
+                    )
+                }
             }
         },
         confirmButton = {
@@ -401,10 +457,19 @@ private fun FeedbackDialog(
                 enabled = message.isNotBlank() && !submitting,
                 onClick = {
                     submitting = true
+                    error = null
                     scope.launch {
-                        val result = runCatching { onSubmit(category, message.trim()) }.getOrElse { Result.failure(it) }
+                        val result = runCatching { onSubmit(category, message.trim()) }
+                            .getOrElse { Result.failure(it) }
                         submitting = false
-                        onResult(result.isSuccess)
+                        if (result.isSuccess) {
+                            onResult(true)
+                        } else {
+                            // Surface the actual reason instead of blaming the connection.
+                            error = result.exceptionOrNull()?.message?.take(200)
+                                ?: "Feedback could not be sent."
+                            onResult(false)
+                        }
                     }
                 }
             ) { if (submitting) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp) else Text("Send") }

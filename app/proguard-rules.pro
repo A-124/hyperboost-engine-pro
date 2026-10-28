@@ -1,21 +1,30 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
+# R8 rules for HyperBoost Engine Pro.
 #
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Shrinking is enabled for release builds. These rules exist because two things in the app are
+# reached by name at runtime rather than through a direct reference, which R8 cannot see.
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# --- Shizuku ---------------------------------------------------------------------------------
+# ShizukuShellExecutor invokes Shizuku.newProcess(...) reflectively, because the method is not part
+# of the published API surface. Stripping or renaming it breaks every privileged command.
+-keep class rikka.shizuku.** { *; }
+-keepclassmembers class rikka.shizuku.** { *; }
+-dontwarn rikka.shizuku.**
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# --- App components --------------------------------------------------------------------------
+# Services, the accessibility service and the quick-settings tile are declared in the manifest and
+# instantiated by the system.
+-keep class com.hyperboost.engine.services.** { *; }
+-keep class com.hyperboost.engine.MainActivity { *; }
+-keep class com.hyperboost.engine.HyperBoostApp { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# --- Stack traces ----------------------------------------------------------------------------
+# Keep line numbers so a user-submitted crash report stays actionable, but rename the source file so
+# the obfuscation is not undone by the file name.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
+
+# --- Third-party -----------------------------------------------------------------------------
+# Unity Ads and Firebase ship their own consumer rules. These only silence missing-class warnings
+# for optional integrations that are referenced but not present in every build.
+-dontwarn com.unity3d.**
+-dontwarn com.google.firebase.**

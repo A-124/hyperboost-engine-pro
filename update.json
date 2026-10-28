@@ -1,5 +1,8 @@
 {
-  "minimumSupportedVersion": "1.3.5",
-  "releaseApi": "https://api.github.com/repos/A-124/hyperboost-engine-pro/releases/latest",
-  "downloadPage": "https://github.com/A-124/hyperboost-engine-pro/releases/latest"
+  "minimumSupportedVersion": "1.7.3",
+  "downloadPage": "https://github.com/A-124/hyperboost-engine-pro/releases/latest",
+  "blockedVersions": [],
+  "blockedVersionCodes": [],
+  "notice": "",
+  "releaseApi": "https://api.github.com/repos/A-124/hyperboost-engine-pro/releases/latest"
 }

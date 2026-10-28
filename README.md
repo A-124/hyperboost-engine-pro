@@ -72,7 +72,9 @@ The app is designed to work without root. Shizuku provides elevated ADB-level ac
 - **Thermal-aware safeguards:** some options include guards intended to reduce unsafe or unsuitable use.
 - **Status and error feedback:** unsupported or rejected operations are reported rather than silently treated as successful.
 - **Update flow:** checks the release manifest and versionCode, verifies SHA-256 and signature compatibility, then opens Android's system installer through a granted `FileProvider` URI. If the installer does not complete, the saved APK can be opened or shared again.
-- **In-app feedback:** optional; requires your own Firebase project (see below).
+- **Download-page fallback:** if an update fails for any reason, the dialog offers **Open download page** so a build whose updater cannot work still reaches a fixed APK.
+- **Opt-in capability report:** off by default; records which shell operations a device accepts or rejects, as a normalized command signature only, to improve compatibility by Android version.
+- **In-app feedback:** optional; requires your own Firebase project (see below). When Firebase is unavailable or a submission fails, the dialog offers **Send on GitHub**, which opens a pre-filled issue in the project repository.
 
 > **Compatibility note:** Android and device manufacturers restrict different system interfaces. Some readings or controls may be unavailable, and successful application of a setting does not guarantee a specific FPS result. Avoid forcing sustained performance at the expense of device temperature or stability.
 
@@ -99,14 +101,20 @@ The app is designed to work without root. Shizuku provides elevated ADB-level ac
 
 The app reads the latest release from this repository (`releases/latest`) and the minimum supported version from `update.json`. Release assets must keep the names `HyperBoost-Engine-Pro-<version>.apk` and `SHA256SUMS.txt`.
 
-> **Re-issued v1.7.3:** if you installed the earlier v1.7.3 upload or any older build, install the current v1.7.3 APK manually once. Those builds stop in-app downloads at the first progress update because of a formatting bug; this build fixes it, so later updates work from inside the app. The release page and APK URL are unchanged.
+`update.json` is read from the `main` branch on every launch and also carries:
+
+- `downloadPage`: the page **Open download page** opens when an update fails.
+- `blockedVersions` / `blockedVersionCodes`: builds that get a non-dismissable update prompt, used to move users off a broken build without a new release. The code list matches one exact build, which is what catches a re-issue that kept its version name.
+- `notice`: an optional string shown once to every user, for advisories that are not tied to a version.
+
+Because these are read at launch, they take effect with a single commit to `main`; no release is needed.
 
 ## Safety and privacy
 
 - Review each tuning option before enabling it; device and vendor behavior varies.
 - Avoid disabling thermal protection during sustained gaming. Thermal override features remain guarded by automatic temperature limits.
 - Do not share signing keystores, passwords, access tokens, or `.env` files.
-- See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for dependency notices and [PRIVACY_POLICY.md](PRIVACY_POLICY.md) for the privacy policy.
+- See [docs/THIRD_PARTY_NOTICES.md](docs/THIRD_PARTY_NOTICES.md) for dependency notices and [docs/PRIVACY_POLICY.md](docs/PRIVACY_POLICY.md) for the privacy policy.
 
 ## Display recovery
 

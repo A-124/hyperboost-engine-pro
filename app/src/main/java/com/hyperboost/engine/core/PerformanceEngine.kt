@@ -19,7 +19,10 @@ import kotlinx.coroutines.withContext
  *  - Tweaks that depend on the Android version or the OEM are best-effort and report why they
  *    were skipped rather than failing the whole boost.
  */
-class PerformanceEngine(context: Context) {
+class PerformanceEngine(
+    context: Context,
+    private val shell: ShellRunner = ShizukuShellRunner
+) {
 
     companion object {
         private const val TAG = "PerformanceEngine"
@@ -72,13 +75,13 @@ class PerformanceEngine(context: Context) {
         timeoutMs: Long = ShizukuShellExecutor.DEFAULT_TIMEOUT_MS
     ): Result<String> = withContext(Dispatchers.IO) {
         Log.i(TAG, command)
-        ShizukuShellExecutor.execute(command, timeoutMs).mapCatching {
+        shell.execute(command, timeoutMs).mapCatching {
             if (it.exitCode == 0) okMessage else throw RuntimeException("$failPrefix: ${it.errorText()}")
         }
     }
 
     private suspend fun readOut(command: String): String? =
-        ShizukuShellExecutor.execute(command).getOrNull()?.takeIf { it.exitCode == 0 }?.stdout?.trim()
+        shell.execute(command).getOrNull()?.takeIf { it.exitCode == 0 }?.stdout?.trim()
 
     // ---- settings (snapshot + restore) -------------------------------------------------------
 
@@ -92,7 +95,7 @@ class PerformanceEngine(context: Context) {
     /** Writes a setting, then READS IT BACK so a silently ignored write is reported, not faked. */
     private suspend fun putSetting(ns: String, key: String, value: String): Result<Unit> {
         snapshotSetting(ns, key)
-        val write = ShizukuShellExecutor.execute("settings put $ns $key ${ShizukuShellExecutor.quote(value)}").mapCatching {
+        val write = shell.execute("settings put $ns $key ${ShizukuShellExecutor.quote(value)}").mapCatching {
             if (it.exitCode != 0) throw RuntimeException("settings put $key: ${it.errorText()}")
         }
         if (write.isFailure) return write
@@ -115,7 +118,7 @@ class PerformanceEngine(context: Context) {
             saved == null || saved == UNSET -> "settings delete $ns $key"
             else -> "settings put $ns $key ${ShizukuShellExecutor.quote(saved)}"
         }
-        return ShizukuShellExecutor.execute(cmd).mapCatching {
+        return shell.execute(cmd).mapCatching {
             if (it.exitCode != 0) throw RuntimeException("restore $key: ${it.errorText()}")
             prefs.edit().remove(id).apply()
         }
@@ -132,7 +135,7 @@ class PerformanceEngine(context: Context) {
 
     private suspend fun putProp(key: String, value: String): Result<Unit> {
         snapshotProp(key)
-        val write = ShizukuShellExecutor.execute("setprop $key ${ShizukuShellExecutor.quote(value)}").mapCatching {
+        val write = shell.execute("setprop $key ${ShizukuShellExecutor.quote(value)}").mapCatching {
             if (it.exitCode != 0) throw RuntimeException("setprop $key: ${it.errorText()}")
         }
         if (write.isFailure) return write
@@ -144,7 +147,7 @@ class PerformanceEngine(context: Context) {
     private suspend fun restoreProp(key: String): Result<Unit> {
         val id = "prop/$key"
         val saved = prefs.getString(id, null) ?: return Result.success(Unit)
-        return ShizukuShellExecutor.execute("setprop $key ${ShizukuShellExecutor.quote(saved)}").mapCatching {
+        return shell.execute("setprop $key ${ShizukuShellExecutor.quote(saved)}").mapCatching {
             if (it.exitCode != 0) throw RuntimeException("restore $key: ${it.errorText()}")
             prefs.edit().remove(id).apply()
         }
@@ -333,7 +336,7 @@ class PerformanceEngine(context: Context) {
             soft { putSetting("global", "wifi_scan_always_enabled", "0") }
 
             // Android 10+; best effort. Do not claim it worked if the command was rejected.
-            val lowLatency = ShizukuShellExecutor.execute("cmd wifi force-low-latency-mode enabled")
+            val lowLatency = shell.execute("cmd wifi force-low-latency-mode enabled")
                 .getOrNull()?.exitCode == 0
             if (lowLatency) markApplied("wifill", true)
 
@@ -365,7 +368,7 @@ class PerformanceEngine(context: Context) {
             { restoreSetting("global", "wifi_scan_always_enabled") },
             {
                 if (wasApplied("wifill")) {
-                    ShizukuShellExecutor.execute("cmd wifi force-low-latency-mode disabled")
+                    shell.execute("cmd wifi force-low-latency-mode disabled")
                     markApplied("wifill", false)
                 }
                 Result.success(Unit)
@@ -472,7 +475,7 @@ class PerformanceEngine(context: Context) {
             "Phantom-process killer disabled (fewer random background kills).",
             { putSetting("global", "settings_enable_monitor_phantom_procs", "false") },
             {
-                ShizukuShellExecutor.execute("device_config put activity_manager max_phantom_processes 2147483647").mapCatching {
+                shell.execute("device_config put activity_manager max_phantom_processes 2147483647").mapCatching {
                     if (it.exitCode != 0) throw RuntimeException("device_config: ${it.errorText()}")
                 }
             }
@@ -480,7 +483,7 @@ class PerformanceEngine(context: Context) {
             "Phantom-process limit restored.",
             { restoreSetting("global", "settings_enable_monitor_phantom_procs") },
             {
-                ShizukuShellExecutor.execute("device_config delete activity_manager max_phantom_processes").mapCatching {
+                shell.execute("device_config delete activity_manager max_phantom_processes").mapCatching {
                     if (it.exitCode != 0) throw RuntimeException("device_config: ${it.errorText()}")
                 }
             }
@@ -511,12 +514,12 @@ class PerformanceEngine(context: Context) {
     suspend fun runStorageMaintenance(): Result<String> = runAll(
         "Storage TRIM & background dexopt triggered.",
         {
-            ShizukuShellExecutor.execute("sm idle-maint run", ShizukuShellExecutor.LONG_TIMEOUT_MS).mapCatching {
+            shell.execute("sm idle-maint run", ShizukuShellExecutor.LONG_TIMEOUT_MS).mapCatching {
                 if (it.exitCode != 0) throw RuntimeException("sm idle-maint: ${it.errorText()}")
             }
         },
         {
-            ShizukuShellExecutor.execute("cmd package bg-dexopt-job", ShizukuShellExecutor.LONG_TIMEOUT_MS).mapCatching {
+            shell.execute("cmd package bg-dexopt-job", ShizukuShellExecutor.LONG_TIMEOUT_MS).mapCatching {
                 if (it.exitCode != 0) throw RuntimeException("bg-dexopt-job: ${it.errorText()}")
             }
         }
@@ -580,7 +583,7 @@ class PerformanceEngine(context: Context) {
                 ?: throw IllegalStateException("This Android version can't read the app's original background policy.")
             prefs.edit().putString("bucket/original/$packageName", original).apply()
         }
-        val result = ShizukuShellExecutor.execute("am set-standby-bucket $packageName restricted")
+        val result = shell.execute("am set-standby-bucket $packageName restricted")
             .getOrElse {
                 prefs.edit().remove("bucket/original/$packageName").apply()
                 throw it
@@ -594,7 +597,7 @@ class PerformanceEngine(context: Context) {
     suspend fun unrestrictApp(packageName: String): Result<String> = runCatching {
         requirePackage(packageName)
         val originalBucket = prefs.getString("bucket/original/$packageName", "active") ?: "active"
-        val result = ShizukuShellExecutor.execute("am set-standby-bucket $packageName $originalBucket").getOrThrow()
+        val result = shell.execute("am set-standby-bucket $packageName $originalBucket").getOrThrow()
         if (result.exitCode != 0) throw RuntimeException("Failed to restore $packageName background policy: ${result.errorText()}")
         untrackPackage("bucket", packageName)
         prefs.edit().remove("bucket/original/$packageName").apply()
@@ -607,7 +610,7 @@ class PerformanceEngine(context: Context) {
     /** Run a short, read-only latency check through the Shizuku shell. */
     suspend fun runNetworkPing(): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
-            val result = ShizukuShellExecutor.execute("ping -c 4 -W 2 1.1.1.1", 15_000L).getOrThrow()
+            val result = shell.execute("ping -c 4 -W 2 1.1.1.1", 15_000L).getOrThrow()
             if (result.exitCode != 0) {
                 val reason = result.stdout.lines().lastOrNull { it.contains("packet loss", ignoreCase = true) }
                     ?: result.errorText()
@@ -731,7 +734,7 @@ class PerformanceEngine(context: Context) {
     suspend fun readCpuGpuTemps(): FrameParsers.Thermal? = withContext(Dispatchers.IO) {
         val script = "for z in /sys/class/thermal/thermal_zone*; do " +
             "echo \"T \$(cat \$z/type 2>/dev/null) \$(cat \$z/temp 2>/dev/null)\"; done"
-        ShizukuShellExecutor.execute(script).getOrNull()
+        shell.execute(script).getOrNull()
             ?.takeIf { it.exitCode == 0 }
             ?.let { FrameParsers.parseThermal(it.stdout.lines()) }
     }
@@ -782,7 +785,7 @@ class PerformanceEngine(context: Context) {
         if (frozen && isSystemApp(packageName)) {
             throw IllegalArgumentException("$packageName is a system app. Only user-installed apps can be frozen.")
         }
-        val out = ShizukuShellExecutor.execute(
+        val out = shell.execute(
             if (frozen) "pm disable-user --user 0 $packageName" else "pm enable --user 0 $packageName"
         ).getOrThrow()
         if (out.exitCode != 0) throw RuntimeException("pm: ${out.errorText()}")
@@ -836,7 +839,7 @@ class PerformanceEngine(context: Context) {
             markApplied("cachedprocs", true)
             val now = readOut("device_config get activity_manager max_cached_processes")
             if (now != "64") {
-                ShizukuShellExecutor.execute("device_config delete activity_manager max_cached_processes")
+                shell.execute("device_config delete activity_manager max_cached_processes")
                 markApplied("cachedprocs", false)
                 return Result.failure(RuntimeException("This ROM ignored the cached-app limit (still '$now')"))
             }
@@ -997,7 +1000,7 @@ class PerformanceEngine(context: Context) {
         ).joinToString("; ")
 
         try {
-            val result = ShizukuShellExecutor.execute(script).getOrThrow()
+            val result = shell.execute(script).getOrThrow()
             val state = EngineStateParser.parse(
                 stdout = result.stdout,
                 applied = ::wasApplied
@@ -1036,11 +1039,11 @@ class PerformanceEngine(context: Context) {
         if (wasApplied("sustained")) setSustainedPerformance(false).onFailure { problems += it.message ?: "sustained" }
         if (wasApplied("dnd")) setGameDnd(false).onFailure { problems += it.message ?: "dnd" }
         if (wasApplied("wifill")) {
-            ShizukuShellExecutor.execute("cmd wifi force-low-latency-mode disabled")
+            shell.execute("cmd wifi force-low-latency-mode disabled")
             markApplied("wifill", false)
         }
         if (wasApplied("phantom")) {
-            ShizukuShellExecutor.execute("device_config delete activity_manager max_phantom_processes")
+            shell.execute("device_config delete activity_manager max_phantom_processes")
             markApplied("phantom", false)
         }
 
@@ -1056,18 +1059,18 @@ class PerformanceEngine(context: Context) {
 
         // 3) Per-app changes: doze whitelist, game mode, standby bucket.
         for (pkg in trackedPackages("doze")) {
-            if (SAFE_PACKAGE.matches(pkg)) ShizukuShellExecutor.execute("dumpsys deviceidle whitelist -$pkg")
+            if (SAFE_PACKAGE.matches(pkg)) shell.execute("dumpsys deviceidle whitelist -$pkg")
         }
         clearTracked("doze")
         for (pkg in trackedPackages("gamemode")) {
             // `reset` hands control back to the system's own default for that game.
-            if (SAFE_PACKAGE.matches(pkg)) ShizukuShellExecutor.execute("cmd game reset $pkg")
+            if (SAFE_PACKAGE.matches(pkg)) shell.execute("cmd game reset $pkg")
         }
         clearTracked("gamemode")
         for (pkg in trackedPackages("bucket")) {
             if (!SAFE_PACKAGE.matches(pkg)) continue
             val originalBucket = prefs.getString("bucket/original/$pkg", "active") ?: "active"
-            val restored = ShizukuShellExecutor.execute("am set-standby-bucket $pkg $originalBucket")
+            val restored = shell.execute("am set-standby-bucket $pkg $originalBucket")
                 .getOrNull()?.exitCode == 0
             if (restored) {
                 untrackPackage("bucket", pkg)
@@ -1078,7 +1081,7 @@ class PerformanceEngine(context: Context) {
         // 4) Apps frozen by the freeze tool. Anything that fails stays tracked so the next restore retries it.
         for (pkg in trackedPackages("frozen")) {
             val ok = SAFE_PACKAGE.matches(pkg) &&
-                ShizukuShellExecutor.execute("pm enable --user 0 $pkg").getOrNull()?.exitCode == 0
+                shell.execute("pm enable --user 0 $pkg").getOrNull()?.exitCode == 0
             if (ok) untrackPackage("frozen", pkg) else problems += "could not unfreeze $pkg"
         }
 
@@ -1094,8 +1097,8 @@ class PerformanceEngine(context: Context) {
     /** Query current display config from `wm size` and `wm density`. */
     suspend fun getDisplayConfig(): Result<DisplayConfig> = withContext(Dispatchers.IO) {
         runCatching {
-            val sizeRes = ShizukuShellExecutor.execute("wm size").getOrThrow()
-            val densityRes = ShizukuShellExecutor.execute("wm density").getOrThrow()
+            val sizeRes = shell.execute("wm size").getOrThrow()
+            val densityRes = shell.execute("wm density").getOrThrow()
 
             var physW: Int? = null
             var physH: Int? = null

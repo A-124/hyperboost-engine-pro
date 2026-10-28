@@ -2,6 +2,7 @@
 package com.hyperboost.engine.core
 
 import android.util.Log
+import com.hyperboost.engine.telemetry.CapabilityReporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -80,6 +81,8 @@ object ShizukuShellExecutor {
                         TAG,
                         "Command finished (${result.exitCode}): stdout=${result.stdout.take(80)}, stderr=${result.stderr.take(80)}"
                     )
+                    // Opt-in only; the reporter normalizes the command before anything is stored.
+                    CapabilityReporter.record(command, result.exitCode)
                     result
                 }
             } finally {

@@ -1,0 +1,189 @@
+name: CI
+
+# Validates pull requests and pushes to main: unit tests, a debug build, lint and
+# a cheap check that the release contract has not drifted. Nothing here publishes
+# anything — the release workflow is separate and tag-only, so the point of this
+# file is to catch a regression on the PR instead of at tag time.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A new push to the same branch makes the previous run pointless, so drop it.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Unit tests. The reports only matter when something breaks, so they are
+  #    uploaded on failure and kept out of the way otherwise.
+  # ---------------------------------------------------------------------------
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run unit tests
+        run: |
+          chmod +x gradlew
+          ./gradlew testDebugUnitTest --no-daemon --stacktrace
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            app/build/reports/tests
+            app/build/test-results
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------------
+  # 2. Debug build. Proves the app still compiles and gives a sideloadable APK
+  #    for manual device testing, which a PR reviewer cannot get otherwise.
+  # ---------------------------------------------------------------------------
+  assemble-debug:
+    name: Assemble debug
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Assemble debug APK
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # 3. Lint. Visibility only for now: abortOnError is false in
+  #    app/build.gradle.kts, so findings are reported and uploaded but never
+  #    block a merge. Flip this to a hard gate once a baseline is checked in,
+  #    otherwise the first run would fail on the whole existing backlog.
+  # ---------------------------------------------------------------------------
+  lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run lint
+        continue-on-error: true
+        run: |
+          chmod +x gradlew
+          ./gradlew lintDebug --no-daemon --stacktrace
+
+      - name: Upload lint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-report
+          path: |
+            app/build/reports/lint-results-debug.html
+            app/build/reports/lint-results-debug.xml
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------------
+  # 4. Release contract check. release.yml reads update.json, both SDK levels
+  #    and a fixed asset naming scheme without any fallback, so a rename here
+  #    would only surface on the next tag. This job has no Android SDK work and
+  #    finishes in seconds.
+  # ---------------------------------------------------------------------------
+  release-config-check:
+    name: Release config check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Verify release contract
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          failed=0
+          fail() {
+            echo "::error::$1"
+            failed=1
+          }
+
+          # release.yml copies minimumSupportedVersion straight into version.json.
+          if [[ ! -f update.json ]]; then
+            fail "update.json is missing at the repository root."
+          elif ! python3 -c "import json,sys; d=json.load(open('update.json')); sys.exit(0 if isinstance(d.get('minimumSupportedVersion'), str) else 1)"; then
+            fail "update.json does not parse as JSON with a string 'minimumSupportedVersion'."
+          fi
+
+          # release.yml relies on both SDK levels being declared by name.
+          for key in minSdk targetSdk; do
+            if ! grep -qE "^[[:space:]]*${key}[[:space:]]*=" app/build.gradle.kts; then
+              fail "app/build.gradle.kts no longer declares ${key}."
+            fi
+          done
+
+          # The updater matches assets by name, so the documented names must stay put.
+          for needle in "HyperBoost-Engine-Pro-" "SHA256SUMS.txt"; do
+            if ! grep -qF -- "$needle" docs/RELEASING.md; then
+              fail "docs/RELEASING.md no longer mentions ${needle}."
+            fi
+          done
+
+          if (( failed != 0 )); then
+            exit 1
+          fi
+          echo "Release contract intact."

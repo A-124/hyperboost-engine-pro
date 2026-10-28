@@ -21,5 +21,28 @@ service cloud.firestore {
         && request.resource.data.status == 'new';
       allow read, update, delete: if false;
     }
+
+    // Opt-in capability reports. One document per (command signature, API level), so devices merge
+    // into shared counters. Write-only: nobody can read the aggregate back from the client.
+    match /capability/{reportId} {
+      allow create, update: if request.auth != null
+        && request.resource.data.keys().hasOnly([
+          'signature', 'apiLevel', 'accepted', 'rejected', 'appVersion', 'updatedAt'
+        ])
+        && request.resource.data.signature is string
+        && request.resource.data.signature.size() > 0
+        && request.resource.data.signature.size() <= 200
+        && request.resource.data.apiLevel is int
+        && request.resource.data.apiLevel >= 26
+        && request.resource.data.apiLevel <= 100
+        && request.resource.data.accepted is int
+        && request.resource.data.accepted >= 0
+        && request.resource.data.rejected is int
+        && request.resource.data.rejected >= 0
+        && request.resource.data.appVersion is string
+        && request.resource.data.appVersion.size() <= 50
+        && request.resource.data.updatedAt == request.time;
+      allow read, delete: if false;
+    }
   }
 }

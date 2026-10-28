@@ -69,3 +69,6 @@ replay_pid*.log
 *.swp
 *.swo
 *~
+
+# Assistant working files
+.workbuddy-ai/

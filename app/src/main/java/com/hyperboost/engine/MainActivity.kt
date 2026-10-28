@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 import com.hyperboost.engine.update.CompatibilityResult
 import com.hyperboost.engine.update.UpdateInfo
 import com.hyperboost.engine.update.UpdateManager
+import com.hyperboost.engine.update.UpdatePolicy
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
@@ -43,6 +44,10 @@ class MainActivity : ComponentActivity() {
 
     private var pendingUpdate: UpdateInfo? = null
     private var pendingInstallDialogShown = false
+    private var updateCheckInFlight = false
+
+    /** Where to send the user when the in-app updater cannot finish. Overridden by `update.json`. */
+    private var downloadPage: String = UpdateManager.DEFAULT_DOWNLOAD_PAGE
 
     private val requestNotificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -55,7 +60,6 @@ class MainActivity : ComponentActivity() {
 
         checkPostNotificationPermission()
         AdManager.init(this)
-        lifecycleScope.launch { checkForUpdates(manual = false) }
 
         setContent {
             HyperBoostTheme {
@@ -86,6 +90,10 @@ class MainActivity : ComponentActivity() {
         viewModel.reevaluateShizuku()
         viewModel.refreshDisplayConfig()
 
+        // Runs on every foreground return, throttled inside. A session that stays open for days
+        // would otherwise never learn about a mandatory update.
+        lifecycleScope.launch { checkForUpdates(manual = false) }
+
         // If the user was redirected to settings to grant package install permission,
         // automatically resume the update download once they return.
         val pending = pendingUpdate
@@ -97,6 +105,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private suspend fun checkForUpdates(manual: Boolean) {
+        if (updateCheckInFlight) return
         val prefs = getSharedPreferences("hyperboost_updates", Context.MODE_PRIVATE)
         val lastCheck = prefs.getLong("last_check_timestamp", 0L)
         val now = System.currentTimeMillis()
@@ -106,9 +115,16 @@ class MainActivity : ComponentActivity() {
             return
         }
 
+        updateCheckInFlight = true
+        // Record the attempt, not the success: a check that fails on every resume would otherwise
+        // hammer the API and re-prompt the user each time they come back to the app.
+        prefs.edit().putLong("last_check_timestamp", now).apply()
+
         try {
-            val update = UpdateManager.fetchLatest()
-            prefs.edit().putLong("last_check_timestamp", now).apply()
+            // The policy file is read first and independently of the release API. It is the only
+            // channel that still works when the updater itself is the thing that is broken.
+            val policy = UpdateManager.fetchPolicy()
+            downloadPage = policy.downloadPage
 
             val packageInfo = packageManager.getPackageInfo(packageName, 0)
             val currentName = packageInfo.versionName ?: "0.0.0"
@@ -118,6 +134,16 @@ class MainActivity : ComponentActivity() {
                 @Suppress("DEPRECATION")
                 packageInfo.versionCode.toLong()
             }
+
+            if (UpdateManager.isBlocked(currentName, currentCode, policy)) {
+                showBlockedBuildDialog(currentName)
+                return
+            }
+
+            // Shown after the blocked check so the two dialogs never stack on top of each other.
+            showNoticeOnce(policy)
+
+            val update = UpdateManager.fetchLatest()
             val mandatory = UpdateManager.compareVersions(currentName, update.minimumSupportedVersion) < 0
             val available = UpdateManager.isNewer(currentCode, currentName, update)
 
@@ -130,6 +156,10 @@ class MainActivity : ComponentActivity() {
                 return
             }
 
+            // A non-mandatory update the user already declined is not shown again for the same
+            // build. Mandatory and blocked updates always re-prompt.
+            if (!manual && !mandatory && prefs.getInt("dismissed_code", 0) == update.versionCode) return
+
             val builder = AlertDialog.Builder(this)
                 .setTitle(if (mandatory) "Update required" else "Update available")
                 .setMessage("HyperBoost Engine Pro ${update.version} is available." +
@@ -141,6 +171,12 @@ class MainActivity : ComponentActivity() {
 
             val dialog = builder.create()
             dialog.setOnShowListener {
+                if (!mandatory) {
+                    dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener {
+                        prefs.edit().putInt("dismissed_code", update.versionCode).apply()
+                        dialog.dismiss()
+                    }
+                }
                 dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                     dialog.dismiss()
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !packageManager.canRequestPackageInstalls()) {
@@ -167,6 +203,63 @@ class MainActivity : ComponentActivity() {
                     "We couldn't check for an update right now. Check your internet connection and try again later. " +
                         "Your installed version has not been changed."
                 )
+                .setPositiveButton("OK", null)
+                // The check can fail because of the network, a rate limit, or a broken build.
+                // Whatever the cause, the user must always be able to reach a download page.
+                .setNeutralButton("Open download page") { _, _ -> openDownloadPage() }
+                .show()
+        } finally {
+            updateCheckInFlight = false
+        }
+    }
+
+    /**
+     * A build listed in `blockedVersions` (or below the supported floor) is not allowed to keep
+     * running. It is shown before the release API is queried, so it still works when the release
+     * itself is the problem.
+     */
+    private fun showBlockedBuildDialog(currentName: String) {
+        AlertDialog.Builder(this)
+            .setTitle("Update required")
+            .setMessage(
+                "HyperBoost Engine Pro $currentName can no longer be used. " +
+                    "Install the current version to continue.\n\n" +
+                    "If the in-app update does not work, open the download page and install the APK manually."
+            )
+            .setCancelable(false)
+            .setPositiveButton("Download and install") { _, _ ->
+                lifecycleScope.launch {
+                    runCatching { UpdateManager.fetchLatest() }
+                        .onSuccess { startUpdateDownload(it) }
+                        .onFailure { openDownloadPage() }
+                }
+            }
+            .setNeutralButton("Open download page") { _, _ -> openDownloadPage() }
+            .show()
+    }
+
+    /** Shows an advisory from `update.json` once per install. */
+    private fun showNoticeOnce(policy: UpdatePolicy) {
+        val notice = policy.notice ?: return
+        val prefs = getSharedPreferences("hyperboost_updates", Context.MODE_PRIVATE)
+        if (prefs.getInt("notice_hash", 0) == notice.hashCode()) return
+        prefs.edit().putInt("notice_hash", notice.hashCode()).apply()
+        AlertDialog.Builder(this)
+            .setTitle("HyperBoost notice")
+            .setMessage(notice)
+            .setPositiveButton("OK", null)
+            .setNeutralButton("Open download page") { _, _ -> openDownloadPage() }
+            .show()
+    }
+
+    /** Last resort for every update path: the browser always works, even when the updater cannot. */
+    private fun openDownloadPage() {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(downloadPage)))
+        } catch (_: Exception) {
+            AlertDialog.Builder(this)
+                .setTitle("Couldn't open the browser")
+                .setMessage("Open this address manually:\n\n$downloadPage")
                 .setPositiveButton("OK", null)
                 .show()
         }
@@ -207,8 +300,12 @@ class MainActivity : ComponentActivity() {
                 progressDialog.dismiss()
                 AlertDialog.Builder(this@MainActivity)
                     .setTitle("Update failed")
-                    .setMessage(e.message ?: "Unable to download or verify the update.")
+                    .setMessage(
+                        (e.message ?: "Unable to download or verify the update.") +
+                            "\n\nYou can download the APK from the release page and install it manually."
+                    )
                     .setPositiveButton("OK", null)
+                    .setNeutralButton("Open download page") { _, _ -> openDownloadPage() }
                     .show()
             }
         }
@@ -259,6 +356,7 @@ class MainActivity : ComponentActivity() {
                                 "You can share the APK and install it manually."
                         )
                         .setPositiveButton("Share APK") { _, _ -> shareApk(apkFile, update.version) }
+                        .setNeutralButton("Download page") { _, _ -> openDownloadPage() }
                         .setNegativeButton("Cancel", null)
                         .show()
                 }

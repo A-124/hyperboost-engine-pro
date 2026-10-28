@@ -1,19 +1,27 @@
 # Changelog
 
+## 1.8.1 - 2026-10-28
+
+- In-app feedback is delivered through Firebase again. The 1.8.0 build was published without its Firebase configuration, so it could only use the **Send on GitHub** fallback.
+- Everything else is unchanged from 1.8.0.
+
 ## 1.8.0 - 2026-10-28
 
 ### Fixed
+
 - Feedback could not be sent at all. Release builds were missing their messaging configuration; they now include it, and if sending still fails the dialog offers **Send on GitHub** instead.
 - Feedback errors now say what actually went wrong.
 - A failed update no longer leaves you stuck: every failure offers **Open download page**.
 - Updates are also checked when you return to the app, and a declined update stops asking.
 
 ### New
+
 - **Required updates and notices:** a build that must not keep running shows a prompt that cannot be dismissed.
 - **Optional device compatibility sharing**, off by default: shares which settings your phone accepts or rejects, never values, app names or messages.
 - **Android 16 support.**
 
 ### Smaller
+
 - Smaller download and faster install: unused code and resources are removed from release builds.
 - No longer asks for permission to see every installed app.
 - Updated Compose, Lifecycle, and Activity.
@@ -28,4 +36,4 @@
 
 ---
 
-Older release notes (1.7.2 and earlier): [docs/CHANGELOG_ARCHIVE.md](docs/CHANGELOG_ARCHIVE.md).
+Older release notes (1.7.2 and earlier): [docs/CHANGELOG\_ARCHIVE.md](docs/CHANGELOG_ARCHIVE.md).

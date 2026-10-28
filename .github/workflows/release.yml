@@ -29,6 +29,9 @@ jobs:
     name: Preflight
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    # A tag deletion also emits a push event for tags. Without this guard the workflow tries to
+    # check out a tag that no longer exists and fails before it can do anything useful.
+    if: ${{ github.event.deleted != true }}
     outputs:
       tag: ${{ steps.meta.outputs.tag }}
       version: ${{ steps.meta.outputs.version }}

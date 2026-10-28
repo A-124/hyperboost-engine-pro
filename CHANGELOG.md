@@ -16,7 +16,7 @@
 ### Smaller
 - Smaller download and faster install: unused code and resources are removed from release builds.
 - No longer asks for permission to see every installed app.
-- Updated Compose, Lifecycle, Activity and Unity Ads.
+- Updated Compose, Lifecycle, and Activity.
 
 ## 1.7.3 - 2026-10-25
 
